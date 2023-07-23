@@ -7,6 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -14,6 +15,7 @@ import net.minecraft.world.level.material.PushReaction;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
+import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -27,6 +29,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
 import org.teacon.checkin.client.gui.screens.inventory.PointUniqueScreen;
+import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.network.protocol.game.PointUniqueSetDataPacket;
 import org.teacon.checkin.world.inventory.PointUniqueMenu;
 import org.teacon.checkin.world.item.PointUniqueItem;
@@ -36,6 +39,7 @@ import org.teacon.checkin.world.level.block.entity.PointUniqueBlockEntity;
 @Mod(CheckMeIn.MODID)
 public class CheckMeIn {
     public static final String MODID = "check_in";
+    @SuppressWarnings("unused")
     private static final Logger LOGGER = LogUtils.getLogger();
 
 
@@ -66,6 +70,7 @@ public class CheckMeIn {
             PointUniqueBlock.NAME, () -> new PointUniqueItem(POINT_UNIQUE_BLOCk.get(), new Item.Properties()
                     .rarity(Rarity.EPIC)));
 
+    @SuppressWarnings("unused")
     public static final RegistryObject<CreativeModeTab> CHECK_IN_TAB = CREATIVE_MODE_TABS.register("check_in_tab", () -> CreativeModeTab.builder()
             .withTabsBefore(CreativeModeTabs.OP_BLOCKS)
             .icon(() -> POINT_UNIQUE_ITEM.get().getDefaultInstance())
@@ -85,7 +90,13 @@ public class CheckMeIn {
         CREATIVE_MODE_TABS.register(modEventBus);
         MENU_TYPES.register(modEventBus);
 
+        MinecraftForge.EVENT_BUS.addGenericListener(Level.class, CheckMeIn::attachCapabilities);
+
         MinecraftForge.EVENT_BUS.register(this);
+    }
+
+    public static void attachCapabilities(AttachCapabilitiesEvent<Level> event) {
+        event.addCapability(CheckInPoints.ID, new CheckInPoints.Provider());
     }
 
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD)

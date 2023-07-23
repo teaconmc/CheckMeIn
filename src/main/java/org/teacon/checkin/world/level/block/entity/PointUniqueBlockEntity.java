@@ -11,6 +11,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.teacon.checkin.CheckMeIn;
+import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.world.inventory.PointUniqueMenu;
 
 public class PointUniqueBlockEntity extends BlockEntity implements Nameable, MenuProvider {
@@ -28,9 +29,17 @@ public class PointUniqueBlockEntity extends BlockEntity implements Nameable, Men
     @Override
     public Component getDisplayName() {return this.getName();}
 
-    public void setTeamID(String teamID) {this.teamID = teamID;}
+    public void setTeamID(String teamID) {
+        this.teamID = teamID;
+        this.level.getCapability(CheckInPoints.Provider.CAPABILITY)
+                .ifPresent(cap -> cap.addUniquePoint(this.teamID, this.getBlockPos()));
+    }
 
     public void setPointName(String pointName) {this.pointName = pointName;}
+
+    public String getTeamID() {return teamID;}
+
+    public String getPointName() {return pointName;}
 
     @Override
     public void load(CompoundTag compoundTag) {
@@ -52,9 +61,12 @@ public class PointUniqueBlockEntity extends BlockEntity implements Nameable, Men
         this.removeIfInvalid();
     }
 
-    // TODO: is there any uncovered cases which may leave an invalid block?
+    // TODO: is there any uncovered cases in which may an invalid block may exist?
     public void removeIfInvalid() {
-        // TODO
+        if (this.teamID.isEmpty() || !this.level.getCapability(CheckInPoints.Provider.CAPABILITY)
+                .map(cap -> cap.uniquePointExists(this.teamID)).orElse(true)) {
+            this.level.removeBlock(this.getBlockPos(), false);
+        }
     }
 
     @Override

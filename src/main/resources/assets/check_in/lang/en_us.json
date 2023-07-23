@@ -4,5 +4,8 @@
     "itemGroup.check_in": "Check Me In",
     "container.check_in.point_unique": "Photography Check-in Point",
     "container.check_in.team_id": "Team ID",
-    "container.check_in.point_name": "Check-in Point Name"
+    "container.check_in.point_name": "Check-in Point Name",
+    "sanitize.check_in.too_long": "%s is too long (%d > %d)",
+    "sanitize.check_in.dup_team_id": "Team ID \"%s\" already has a %s at %s, click to teleport",
+    "sanitize.check_in.empty": "%s is empty"
 }

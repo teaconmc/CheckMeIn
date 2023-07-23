@@ -29,16 +29,30 @@ public class PointUniqueScreen extends Screen implements MenuAccess<PointUniqueM
         super.init();
         int centerX = this.width / 2, centerY = this.height / 2;
         this.teamID = new EditBox(this.font, centerX - 150, 60, 125, 20, Component.translatable("container.check_in.team_id"));
+        teamID.setMaxLength(50);
         this.pointName = new EditBox(this.font, centerX + 4, 60, 125, 20, Component.translatable("container.check_in.point_name"));
+        pointName.setMaxLength(50);
         this.addWidget(this.teamID);
         this.addWidget(this.pointName);
-        this.doneBtn = this.addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, this::onDone)
+        this.doneBtn = this.addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, btn -> this.onDone())
                 .bounds(centerX - 154, centerY / 2 + 132, 150, 20)
                 .build());
         this.cancelBtn = this.addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, btn -> this.onClose())
                 .bounds(centerX + 4, centerY / 2 + 132, 150, 20)
                 .build());
-        this.setInitialFocus(this.pointName);
+        this.setInitialFocus(this.teamID);
+    }
+
+    @Override
+    public boolean keyPressed(int p_97667_, int p_97668_, int p_97669_) {
+        if (super.keyPressed(p_97667_, p_97668_, p_97669_)) {
+            return true;
+        } else if (p_97667_ == 257 || p_97667_ == 335) { // Enter or Numpad Enter
+            this.onDone();
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -58,14 +72,14 @@ public class PointUniqueScreen extends Screen implements MenuAccess<PointUniqueM
         super.render(guiGraphics, mouseX, mouseY, p_282465_);
     }
 
-    private void onDone(Button btn) {
+    private void onDone() {
         CheckMeIn.CHANNEL.sendToServer(new PointUniqueSetDataPacket(this.getMenu().getBlockPos(),
                 this.teamID.getValue(), this.pointName.getValue()));
         this.onClose();
     }
 
     @Override
-    public void onClose() {this.minecraft.player.closeContainer();}
+    public void onClose() {this.minecraft.setScreen(null);}
 
     @Override
     public PointUniqueMenu getMenu() {return this.menu;}

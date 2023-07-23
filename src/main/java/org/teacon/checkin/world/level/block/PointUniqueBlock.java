@@ -27,6 +27,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 import org.teacon.checkin.CheckMeIn;
+import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.world.level.block.entity.PointUniqueBlockEntity;
 
 public class PointUniqueBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
@@ -81,4 +82,16 @@ public class PointUniqueBlock extends BaseEntityBlock implements SimpleWaterlogg
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {return new PointUniqueBlockEntity(pos, state);}
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState state, boolean p_60519_) {
+        if (!oldState.is(state.getBlock())) {
+            if (level.getBlockEntity(pos) instanceof PointUniqueBlockEntity pointUniqueBE) {
+                level.getCapability(CheckInPoints.Provider.CAPABILITY)
+                        .ifPresent(cap -> cap.removeUniquePoint(pointUniqueBE.getTeamID()));
+            }
+            super.onRemove(oldState, level, pos, state, p_60519_);
+        }
+    }
 }
