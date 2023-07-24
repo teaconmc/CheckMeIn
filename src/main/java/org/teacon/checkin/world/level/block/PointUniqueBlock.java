@@ -87,9 +87,10 @@ public class PointUniqueBlock extends BaseEntityBlock implements SimpleWaterlogg
     @Override
     public void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState state, boolean p_60519_) {
         if (!oldState.is(state.getBlock())) {
-            if (level.getBlockEntity(pos) instanceof PointUniqueBlockEntity pointUniqueBE) {
+            if (level.getBlockEntity(pos) instanceof PointUniqueBlockEntity pointUniqueBE
+                    && pointUniqueBE.getPointData() != null) {
                 level.getCapability(CheckInPoints.Provider.CAPABILITY)
-                        .ifPresent(cap -> cap.removeUniquePoint(pointUniqueBE.getTeamID()));
+                        .ifPresent(cap -> cap.removeUniquePoint(pointUniqueBE.getPointData().teamID()));
             }
             super.onRemove(oldState, level, pos, state, p_60519_);
         }

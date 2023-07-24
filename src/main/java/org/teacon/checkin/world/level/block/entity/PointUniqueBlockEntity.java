@@ -12,12 +12,16 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.network.capability.CheckInPoints;
+import org.teacon.checkin.network.capability.UniquePointData;
 import org.teacon.checkin.world.inventory.PointUniqueMenu;
 
-public class PointUniqueBlockEntity extends BlockEntity implements Nameable, MenuProvider {
+import javax.annotation.Nullable;
 
-    private String teamID = "";
-    private String pointName = "";
+public class PointUniqueBlockEntity extends BlockEntity implements Nameable, MenuProvider {
+    private static final String POINT_DATA_KEY = "PointData";
+
+    @Nullable
+    private UniquePointData pointData = null;
 
     public PointUniqueBlockEntity(BlockPos pos, BlockState blockState) {
         super(CheckMeIn.POINT_UNIQUE_BLOCK_ENTITY.get(), pos, blockState);
@@ -29,30 +33,26 @@ public class PointUniqueBlockEntity extends BlockEntity implements Nameable, Men
     @Override
     public Component getDisplayName() {return this.getName();}
 
-    public void setTeamID(String teamID) {
-        this.teamID = teamID;
+    public void initializeData(String teamID, String pointName) {
+        if (this.pointData != null) return;
+        this.pointData = new UniquePointData(this.getBlockPos(), teamID, pointName);
         this.level.getCapability(CheckInPoints.Provider.CAPABILITY)
-                .ifPresent(cap -> cap.addUniquePoint(this.teamID, this.getBlockPos()));
+                .ifPresent(cap -> cap.addUniquePoint(teamID, this.pointData));
     }
 
-    public void setPointName(String pointName) {this.pointName = pointName;}
-
-    public String getTeamID() {return teamID;}
-
-    public String getPointName() {return pointName;}
+    @Nullable
+    public UniquePointData getPointData() {return this.pointData;}
 
     @Override
     public void load(CompoundTag compoundTag) {
         super.load(compoundTag);
-        this.teamID = compoundTag.getString("TeamID");
-        this.pointName = compoundTag.getString("PointName");
+        this.pointData = UniquePointData.readNBT(compoundTag.getCompound(POINT_DATA_KEY)).orElse(null);
     }
 
     @Override
     protected void saveAdditional(CompoundTag compoundTag) {
         super.saveAdditional(compoundTag);
-        compoundTag.putString("TeamID", this.teamID);
-        compoundTag.putString("PointName", this.pointName);
+        if (this.pointData != null) compoundTag.put(POINT_DATA_KEY, this.pointData.writeNBT());
     }
 
     @Override
@@ -61,10 +61,14 @@ public class PointUniqueBlockEntity extends BlockEntity implements Nameable, Men
         this.removeIfInvalid();
     }
 
-    // TODO: is there any uncovered cases in which may an invalid block may exist?
+    /**
+     * Remove when data is not initialized, or the point's data does match that in the capability.
+     * TODO: is there any uncovered cases in which may an invalid block may exist?
+     */
     public void removeIfInvalid() {
-        if (this.teamID.isEmpty() || !this.level.getCapability(CheckInPoints.Provider.CAPABILITY)
-                .map(cap -> cap.uniquePointExists(this.teamID)).orElse(true)) {
+        if (this.pointData == null || !this.level.getCapability(CheckInPoints.Provider.CAPABILITY)
+                .map(cap -> this.pointData.equals(cap.getUniquePoint(this.pointData.teamID())))
+                .orElse(true)) {
             this.level.removeBlock(this.getBlockPos(), false);
         }
     }

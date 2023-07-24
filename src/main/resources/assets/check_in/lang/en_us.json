@@ -7,5 +7,8 @@
     "container.check_in.point_name": "Check-in Point Name",
     "sanitize.check_in.too_long": "%s is too long (%d > %d)",
     "sanitize.check_in.dup_team_id": "Team ID \"%s\" already has a %s at %s, click to teleport",
-    "sanitize.check_in.empty": "%s is empty"
+    "sanitize.check_in.empty": "%s is empty",
+    "commands.check_in.unique_point_hover": "%s: %s\n%s: %s\n%d, %d, %d (%s)\n(click to teleport)",
+    "commands.check_in.no_found": "No %s found",
+    "commands.check_in.found_total": "Found %d %s in total"
 }

@@ -44,10 +44,10 @@ public class PointUniqueScreen extends Screen implements MenuAccess<PointUniqueM
     }
 
     @Override
-    public boolean keyPressed(int p_97667_, int p_97668_, int p_97669_) {
-        if (super.keyPressed(p_97667_, p_97668_, p_97669_)) {
+    public boolean keyPressed(int keyCode, int p_97668_, int p_97669_) {
+        if (super.keyPressed(keyCode, p_97668_, p_97669_)) {
             return true;
-        } else if (p_97667_ == 257 || p_97667_ == 335) { // Enter or Numpad Enter
+        } else if (keyCode == 257 || keyCode == 335) { // Enter or Numpad Enter
             this.onDone();
             return true;
         } else {
@@ -75,11 +75,17 @@ public class PointUniqueScreen extends Screen implements MenuAccess<PointUniqueM
     private void onDone() {
         CheckMeIn.CHANNEL.sendToServer(new PointUniqueSetDataPacket(this.getMenu().getBlockPos(),
                 this.teamID.getValue(), this.pointName.getValue()));
-        this.onClose();
+        super.onClose(); // close without send closing container packet
     }
 
+    /**
+     * Close without saving data (server should remove block)
+     */
     @Override
-    public void onClose() {this.minecraft.setScreen(null);}
+    public void onClose() {
+        this.minecraft.player.closeContainer();
+        super.onClose();
+    }
 
     @Override
     public PointUniqueMenu getMenu() {return this.menu;}

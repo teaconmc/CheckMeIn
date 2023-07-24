@@ -16,6 +16,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -31,6 +32,7 @@ import org.slf4j.Logger;
 import org.teacon.checkin.client.gui.screens.inventory.PointUniqueScreen;
 import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.network.protocol.game.PointUniqueSetDataPacket;
+import org.teacon.checkin.server.commands.CheckMeInCommand;
 import org.teacon.checkin.world.inventory.PointUniqueMenu;
 import org.teacon.checkin.world.item.PointUniqueItem;
 import org.teacon.checkin.world.level.block.PointUniqueBlock;
@@ -39,8 +41,7 @@ import org.teacon.checkin.world.level.block.entity.PointUniqueBlockEntity;
 @Mod(CheckMeIn.MODID)
 public class CheckMeIn {
     public static final String MODID = "check_in";
-    @SuppressWarnings("unused")
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
 
 
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
@@ -90,9 +91,14 @@ public class CheckMeIn {
         CREATIVE_MODE_TABS.register(modEventBus);
         MENU_TYPES.register(modEventBus);
 
+        MinecraftForge.EVENT_BUS.addListener(CheckMeIn::registerCommands);
         MinecraftForge.EVENT_BUS.addGenericListener(Level.class, CheckMeIn::attachCapabilities);
+    }
 
-        MinecraftForge.EVENT_BUS.register(this);
+    public static void registerCommands(RegisterCommandsEvent event) {
+        var dispatcher = event.getDispatcher();
+        var buildContext = event.getBuildContext();
+        CheckMeInCommand.register(dispatcher, buildContext);
     }
 
     public static void attachCapabilities(AttachCapabilitiesEvent<Level> event) {
@@ -102,7 +108,7 @@ public class CheckMeIn {
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
     public static class CommonModEvents {
         @SubscribeEvent
-        public static void onCommonSetup(FMLCommonSetupEvent event) {
+        public static void commonSetup(FMLCommonSetupEvent event) {
             var packId = 0;
             CHANNEL.registerMessage(packId++, PointUniqueSetDataPacket.class,
                     PointUniqueSetDataPacket::write, PointUniqueSetDataPacket::new, PointUniqueSetDataPacket::handle);
@@ -112,7 +118,7 @@ public class CheckMeIn {
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
         @SubscribeEvent
-        public static void onClientSetup(FMLClientSetupEvent event) {
+        public static void clientSetup(FMLClientSetupEvent event) {
             MenuScreens.register(POINT_UNIQUE_MENU.get(), PointUniqueScreen::new);
         }
     }
