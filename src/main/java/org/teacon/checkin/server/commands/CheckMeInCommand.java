@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.function.Function;
 
 public class CheckMeInCommand {
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext buildContext) {
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, @SuppressWarnings("unused") CommandBuildContext buildContext) {
         //  /checkmein list unique_point point_name|team_id
         dispatcher.register(Commands.literal("checkmein").requires(sourceStack -> sourceStack.hasPermission(2))
                 .then(Commands.literal("list")

@@ -11,14 +11,13 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.network.capability.CheckInPoints;
-import org.teacon.checkin.world.inventory.PointUniqueMenu;
+import org.teacon.checkin.world.inventory.PointPathMenu;
 
-import javax.annotation.Nullable;
 import java.util.Objects;
 
-public class PointUniqueBlockEntity extends BlockEntity implements Nameable, MenuProvider {
-    public PointUniqueBlockEntity(BlockPos pos, BlockState blockState) {
-        super(CheckMeIn.POINT_UNIQUE_BLOCK_ENTITY.get(), pos, blockState);
+public class PointPathBlockEntity extends BlockEntity implements Nameable, MenuProvider {
+    public PointPathBlockEntity(BlockPos pos, BlockState blockState) {
+        super(CheckMeIn.POINT_PATH_BLOCK_ENTITY.get(), pos, blockState);
     }
 
     @Override
@@ -31,7 +30,7 @@ public class PointUniqueBlockEntity extends BlockEntity implements Nameable, Men
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
         if (this.removeIfInvalid()) {
-            CheckMeIn.LOGGER.info("Remove invalid {} at {}, {}, {} ({})", CheckMeIn.POINT_UNIQUE_BLOCK.get(),
+            CheckMeIn.LOGGER.info("Remove invalid {} at {}, {}, {} ({})", CheckMeIn.POINT_PATH_BLOCK.get(),
                     this.getBlockPos().getX(), this.getBlockPos().getY(), this.getBlockPos().getZ(), Objects.requireNonNull(this.level).dimensionTypeId().registry());
         }
     }
@@ -44,7 +43,7 @@ public class PointUniqueBlockEntity extends BlockEntity implements Nameable, Men
      * @return true if the block is not initialized, otherwise false
      */
     public boolean removeIfInvalid() {
-        if (CheckInPoints.of(Objects.requireNonNull(this.level)).map(cap -> cap.getUniquePoint(this.getBlockPos()) == null)
+        if (CheckInPoints.of(Objects.requireNonNull(this.level)).map(cap -> cap.getPathPoint(this.getBlockPos()) == null)
                 .orElse(true)) {
             this.level.removeBlock(this.getBlockPos(), false);
             return true;
@@ -53,8 +52,7 @@ public class PointUniqueBlockEntity extends BlockEntity implements Nameable, Men
     }
 
     @Override
-    @Nullable
     public AbstractContainerMenu createMenu(int p_39954_, Inventory inventory, Player player) {
-        return new PointUniqueMenu(p_39954_, this.getBlockPos()); // BlockPos is delivered to menu in FriendlyByteBuf
+        return new PointPathMenu(p_39954_, this.getBlockPos()); // BlockPos is delivered to menu in FriendlyByteBuf
     }
 }

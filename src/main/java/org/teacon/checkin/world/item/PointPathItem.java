@@ -10,11 +10,11 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
-import org.teacon.checkin.world.level.block.PointUniqueBlock;
-import org.teacon.checkin.world.level.block.entity.PointUniqueBlockEntity;
+import org.teacon.checkin.world.level.block.PointPathBlock;
+import org.teacon.checkin.world.level.block.entity.PointPathBlockEntity;
 
-public class PointUniqueItem extends BlockItem {
-    public PointUniqueItem(Block block, Properties properties) { super(block, properties); }
+public class PointPathItem extends BlockItem {
+    public PointPathItem(Block block, Properties properties) { super(block, properties); }
 
     /**
      * @see net.minecraft.world.item.SignItem#updateCustomBlockEntityTag(BlockPos, Level, Player, ItemStack, BlockState)
@@ -24,9 +24,9 @@ public class PointUniqueItem extends BlockItem {
     protected boolean updateCustomBlockEntityTag(BlockPos pos, Level level, @Nullable Player player, ItemStack itemStack, BlockState state) {
         boolean flag = super.updateCustomBlockEntityTag(pos, level, player, itemStack, state);
         if (!level.isClientSide && !flag && player != null) {
-            if (level.getBlockEntity(pos) instanceof PointUniqueBlockEntity pointUniqueBlockEntity
-                    && level.getBlockState(pos).getBlock() instanceof PointUniqueBlock) {
-                NetworkHooks.openScreen((ServerPlayer) player, pointUniqueBlockEntity, pos);
+            if (level.getBlockEntity(pos) instanceof PointPathBlockEntity pointPathBlockEntity
+                    && level.getBlockState(pos).getBlock() instanceof PointPathBlock) {
+                NetworkHooks.openScreen((ServerPlayer) player, pointPathBlockEntity, pos);
             }
         }
         return flag;

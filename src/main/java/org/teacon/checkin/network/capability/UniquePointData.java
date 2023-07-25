@@ -39,9 +39,7 @@ public record UniquePointData(BlockPos pos, String teamID, String pointName) {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(pos, teamID, pointName);
-    }
+    public int hashCode() {return Objects.hash(pos, teamID, pointName);}
 
     @Override
     public String toString() {

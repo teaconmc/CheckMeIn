@@ -1,0 +1,7 @@
+{
+    "variants": {
+        "": {
+            "model": "check_in:block/point_path"
+        }
+    }
+}
