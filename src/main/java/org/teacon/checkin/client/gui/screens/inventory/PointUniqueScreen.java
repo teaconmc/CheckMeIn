@@ -11,6 +11,7 @@ import net.minecraft.world.entity.player.Inventory;
 import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.network.protocol.game.PointUniqueSetDataPacket;
 import org.teacon.checkin.world.inventory.PointUniqueMenu;
+import org.teacon.checkin.world.level.block.entity.PointUniqueBlockEntity;
 
 public class PointUniqueScreen extends Screen implements MenuAccess<PointUniqueMenu> {
     private final PointUniqueMenu menu;
@@ -37,7 +38,7 @@ public class PointUniqueScreen extends Screen implements MenuAccess<PointUniqueM
         this.doneBtn = this.addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, btn -> this.onDone())
                 .bounds(centerX - 154, centerY / 2 + 132, 150, 20)
                 .build());
-        this.cancelBtn = this.addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, btn -> this.onClose())
+        this.cancelBtn = this.addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, btn -> this.onCancel())
                 .bounds(centerX + 4, centerY / 2 + 132, 150, 20)
                 .build());
         this.setInitialFocus(this.teamID);
@@ -45,7 +46,10 @@ public class PointUniqueScreen extends Screen implements MenuAccess<PointUniqueM
 
     @Override
     public boolean keyPressed(int keyCode, int p_97668_, int p_97669_) {
-        if (super.keyPressed(keyCode, p_97668_, p_97669_)) {
+        if (keyCode == 256 && this.shouldCloseOnEsc()){ // cancel on pressing ESC and quit
+            this.onCancel();
+            return true;
+        } else if (super.keyPressed(keyCode, p_97668_, p_97669_)) {
             return true;
         } else if (keyCode == 257 || keyCode == 335) { // Enter or Numpad Enter
             this.onDone();
@@ -75,16 +79,16 @@ public class PointUniqueScreen extends Screen implements MenuAccess<PointUniqueM
     private void onDone() {
         CheckMeIn.CHANNEL.sendToServer(new PointUniqueSetDataPacket(this.getMenu().getBlockPos(),
                 this.teamID.getValue(), this.pointName.getValue()));
-        super.onClose(); // close without send closing container packet
+        this.onClose(); // close on client side only
     }
 
     /**
-     * Close without saving data (server should remove block)
+     * Tells the server to remove the PointUniqueBlock if it's uninitialized by indirectly calling
+     * {@link PointUniqueBlockEntity#removeIfInvalid()}
      */
-    @Override
-    public void onClose() {
+    public void onCancel() {
         this.minecraft.player.closeContainer();
-        super.onClose();
+        this.onClose(); // close on client side only
     }
 
     @Override

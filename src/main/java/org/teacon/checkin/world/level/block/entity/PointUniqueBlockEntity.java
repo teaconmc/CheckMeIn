@@ -1,7 +1,6 @@
 package org.teacon.checkin.world.level.block.entity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.Nameable;
@@ -12,17 +11,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.network.capability.CheckInPoints;
-import org.teacon.checkin.network.capability.UniquePointData;
 import org.teacon.checkin.world.inventory.PointUniqueMenu;
 
-import javax.annotation.Nullable;
-
 public class PointUniqueBlockEntity extends BlockEntity implements Nameable, MenuProvider {
-    private static final String POINT_DATA_KEY = "PointData";
-
-    @Nullable
-    private UniquePointData pointData = null;
-
     public PointUniqueBlockEntity(BlockPos pos, BlockState blockState) {
         super(CheckMeIn.POINT_UNIQUE_BLOCK_ENTITY.get(), pos, blockState);
     }
@@ -33,44 +24,29 @@ public class PointUniqueBlockEntity extends BlockEntity implements Nameable, Men
     @Override
     public Component getDisplayName() {return this.getName();}
 
-    public void initializeData(String teamID, String pointName) {
-        if (this.pointData != null) return;
-        this.pointData = new UniquePointData(this.getBlockPos(), teamID, pointName);
-        this.level.getCapability(CheckInPoints.Provider.CAPABILITY)
-                .ifPresent(cap -> cap.addUniquePoint(teamID, this.pointData));
-    }
-
-    @Nullable
-    public UniquePointData getPointData() {return this.pointData;}
-
-    @Override
-    public void load(CompoundTag compoundTag) {
-        super.load(compoundTag);
-        this.pointData = UniquePointData.readNBT(compoundTag.getCompound(POINT_DATA_KEY)).orElse(null);
-    }
-
-    @Override
-    protected void saveAdditional(CompoundTag compoundTag) {
-        super.saveAdditional(compoundTag);
-        if (this.pointData != null) compoundTag.put(POINT_DATA_KEY, this.pointData.writeNBT());
-    }
-
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
-        this.removeIfInvalid();
+        if (this.removeIfInvalid()) {
+            CheckMeIn.LOGGER.info("Remove invalid %s at %d, %d, %d (%s)", CheckMeIn.POINT_UNIQUE_BLOCk.get(),
+                    this.getBlockPos().getX(), this.getBlockPos().getY(), this.getBlockPos().getZ(), this.level.dimensionTypeId().registry());
+        }
     }
 
     /**
-     * Remove when data is not initialized, or the point's data does match that in the capability.
+     * Remove when data is not initialized, i.e. data is not in the capability.
+     * <p>
      * TODO: is there any uncovered cases in which may an invalid block may exist?
+     *
+     * @return true if the block is not initialized, otherwise false
      */
-    public void removeIfInvalid() {
-        if (this.pointData == null || !this.level.getCapability(CheckInPoints.Provider.CAPABILITY)
-                .map(cap -> this.pointData.equals(cap.getUniquePoint(this.pointData.teamID())))
+    public boolean removeIfInvalid() {
+        if (this.level.getCapability(CheckInPoints.Provider.CAPABILITY).map(cap -> cap.getUniquePoint(this.getBlockPos()) == null)
                 .orElse(true)) {
             this.level.removeBlock(this.getBlockPos(), false);
+            return true;
         }
+        return false;
     }
 
     @Override

@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraftforge.network.NetworkEvent;
 import org.teacon.checkin.network.capability.CheckInPoints;
+import org.teacon.checkin.network.capability.UniquePointData;
 import org.teacon.checkin.world.inventory.PointUniqueMenu;
 import org.teacon.checkin.world.level.block.entity.PointUniqueBlockEntity;
 
@@ -48,12 +49,13 @@ public class PointUniqueSetDataPacket {
         if (level.getBlockEntity(this.pointUniqueBlockPos) instanceof PointUniqueBlockEntity pointUniqueBlockEntity) {
             try {
                 var result = sanitize(context);
-                pointUniqueBlockEntity.initializeData(result.teamID, result.pointName);
+                level.getCapability(CheckInPoints.Provider.CAPABILITY).resolve().ifPresent(cap ->
+                        cap.addUniquePoint(new UniquePointData(this.pointUniqueBlockPos, result.teamID, result.pointName)));
             } catch (SanitizeException e) {
                 player.sendSystemMessage(e.getMsg().plainCopy().withStyle(ChatFormatting.BOLD, ChatFormatting.RED));
             }
         }
-        if (player.containerMenu instanceof PointUniqueMenu) player.doCloseContainer();
+        if (player.containerMenu instanceof PointUniqueMenu) player.closeContainer(); // also tells the client to close menu
     }
 
     private SanitizeResult sanitize(NetworkEvent.Context context) throws SanitizeException {
