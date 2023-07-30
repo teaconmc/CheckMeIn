@@ -30,7 +30,7 @@ public class PointUniqueBlockEntity extends BlockEntity implements Nameable, Men
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
         if (this.removeIfInvalid()) {
-            CheckMeIn.LOGGER.info("Remove invalid {} at {}, {}, {} ({})", CheckMeIn.POINT_UNIQUE_BLOCK.get(),
+            CheckMeIn.LOGGER.info("Remove invalid {} at {}, {}, {} ({})", CheckMeIn.POINT_PATH_BLOCK.get(),
                     this.getBlockPos().getX(), this.getBlockPos().getY(), this.getBlockPos().getZ(), this.level != null ? this.level.dimensionTypeId().registry() : "null");
         }
     }

@@ -37,6 +37,7 @@ import org.teacon.checkin.network.protocol.game.PointUniqueSetDataPacket;
 import org.teacon.checkin.server.commands.CheckMeInCommand;
 import org.teacon.checkin.world.inventory.PointPathMenu;
 import org.teacon.checkin.world.inventory.PointUniqueMenu;
+import org.teacon.checkin.world.item.PathPlanner;
 import org.teacon.checkin.world.item.PointPathItem;
 import org.teacon.checkin.world.item.PointUniqueItem;
 import org.teacon.checkin.world.level.block.PointPathBlock;
@@ -85,13 +86,15 @@ public class CheckMeIn {
             PointUniqueBlock.NAME, () -> new PointUniqueItem(POINT_UNIQUE_BLOCK.get(), new Item.Properties().rarity(Rarity.EPIC)));
     public static final RegistryObject<Item> POINT_PATH_ITEM = ITEMS.register(
             PointPathBlock.NAME, () -> new PointPathItem(POINT_PATH_BLOCK.get(), new Item.Properties().rarity(Rarity.EPIC)));
+    public static final RegistryObject<Item> PATH_PLANNER = ITEMS.register(
+            PathPlanner.NAME, () -> new PathPlanner(new Item.Properties().rarity(Rarity.EPIC)));
 
     @SuppressWarnings("unused")
     public static final RegistryObject<CreativeModeTab> CHECK_IN_TAB = CREATIVE_MODE_TABS.register("check_in_tab", () -> CreativeModeTab.builder()
             .withTabsBefore(CreativeModeTabs.OP_BLOCKS)
             .icon(() -> POINT_UNIQUE_ITEM.get().getDefaultInstance())
             .displayItems((parameters, output) -> output.acceptAll(Stream.of(
-                    POINT_UNIQUE_ITEM, POINT_PATH_ITEM
+                    POINT_UNIQUE_ITEM, POINT_PATH_ITEM, PATH_PLANNER
             ).map(RegistryObject::get).map(ItemStack::new).collect(Collectors.toList())))
             .title(Component.translatable("itemGroup.check_in"))
             .build());

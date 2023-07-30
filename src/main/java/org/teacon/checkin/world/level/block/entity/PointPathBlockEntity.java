@@ -13,8 +13,6 @@ import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.world.inventory.PointPathMenu;
 
-import java.util.Objects;
-
 public class PointPathBlockEntity extends BlockEntity implements Nameable, MenuProvider {
     public PointPathBlockEntity(BlockPos pos, BlockState blockState) {
         super(CheckMeIn.POINT_PATH_BLOCK_ENTITY.get(), pos, blockState);

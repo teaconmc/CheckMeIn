@@ -26,6 +26,8 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import java.util.Collection;
+
 public abstract class AbstractCheckPointBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
     protected static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     private final Minecraft mc;
@@ -42,10 +44,10 @@ public abstract class AbstractCheckPointBlock extends BaseEntityBlock implements
     @Override
     @SuppressWarnings("deprecation")
     public VoxelShape getShape(BlockState blockState, BlockGetter blockGetter, BlockPos pos, CollisionContext collisionContext) {
-        return collisionContext.isHoldingItem(this.revealingItem()) ? Shapes.block() : Shapes.empty();
+        return getRevealingItems().stream().anyMatch(collisionContext::isHoldingItem) ? Shapes.block() : Shapes.empty();
     }
 
-    protected abstract Item revealingItem();
+    protected abstract Collection<Item> getRevealingItems();
 
     @Override
     public boolean propagatesSkylightDown(BlockState blockState, BlockGetter blockGetter, BlockPos pos) {return true;}
@@ -80,7 +82,7 @@ public abstract class AbstractCheckPointBlock extends BaseEntityBlock implements
     @Override
     public void animateTick(BlockState blockState, Level level, BlockPos pos, RandomSource randomSource) {
         if (this.mc.gameMode != null && this.mc.gameMode.getPlayerMode() == GameType.CREATIVE) {
-            if (this.mc.player != null && this.mc.player.getMainHandItem().getItem() == this.revealingItem()) {
+            if (this.mc.player != null && this.getRevealingItems().contains(this.mc.player.getMainHandItem().getItem())) {
                 level.addAlwaysVisibleParticle(new BlockParticleOption(ParticleTypes.BLOCK_MARKER, blockState),
                         pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                         0, 0, 0);

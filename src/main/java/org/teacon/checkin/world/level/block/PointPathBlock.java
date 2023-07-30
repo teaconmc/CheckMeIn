@@ -10,13 +10,16 @@ import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.world.level.block.entity.PointPathBlockEntity;
 
+import java.util.Collection;
+import java.util.List;
+
 public class PointPathBlock extends AbstractCheckPointBlock {
     public static final String NAME = "point_path";
 
     public PointPathBlock(Properties prop) {super(prop);}
 
     @Override
-    protected Item revealingItem() {return CheckMeIn.POINT_PATH_ITEM.get();}
+    protected Collection<Item> getRevealingItems() {return List.of(CheckMeIn.POINT_PATH_ITEM.get(), CheckMeIn.PATH_PLANNER.get());}
 
     @Nullable
     @Override

@@ -10,13 +10,16 @@ import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.world.level.block.entity.PointUniqueBlockEntity;
 
+import java.util.Collection;
+import java.util.List;
+
 public class PointUniqueBlock extends AbstractCheckPointBlock {
     public static final String NAME = "point_unique";
 
     public PointUniqueBlock(Properties prop) {super(prop);}
 
     @Override
-    protected Item revealingItem() {return CheckMeIn.POINT_UNIQUE_ITEM.get();}
+    protected Collection<Item> getRevealingItems() {return List.of(CheckMeIn.POINT_UNIQUE_ITEM.get());}
 
     @Nullable
     @Override

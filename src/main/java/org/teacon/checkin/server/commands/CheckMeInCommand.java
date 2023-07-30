@@ -70,7 +70,7 @@ public class CheckMeInCommand {
         for (var level : context.getSource().getServer().getAllLevels()) {
             var capOpt = level.getCapability(CheckInPoints.Provider.CAPABILITY).resolve();
             capOpt.ifPresent(checkInPoints -> checkInPoints.getAllPathPoints()
-                    .stream().sorted(Comparator.comparing(displayFunc))
+                    .stream().sorted(Comparator.comparing(displayFunc).thenComparingInt(d -> d.ord() == null ? -1 : d.ord()))
                     .forEachOrdered(data -> components.add(Component.literal(displayFunc.apply(data)).withStyle(Style.EMPTY
                             .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, data.toTextComponent(level)))
                             .withClickEvent(TextComponent.teleportTo(data.pos(), level))))));
