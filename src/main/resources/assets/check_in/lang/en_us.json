@@ -1,19 +1,28 @@
 {
     "block.check_in.point_unique": "Photography Check-in Point",
     "block.check_in.point_path": "Path Check-in Point",
+
     "item.check_in.point_unique": "Photography Check-in Point",
     "item.check_in.point_path": "Photography Check-in Point",
+
     "itemGroup.check_in": "Check Me In",
+
     "container.check_in.point_unique": "Photography Check-in Point",
     "container.check_in.point_path": "Photography Check-in Point",
     "container.check_in.team_id": "Team ID",
     "container.check_in.point_name": "Check-in Point Name",
     "container.check_in.path_id": "Check-in Point Path ID",
     "container.check_in.ord": "Ordinal Number",
+
     "sanitize.check_in.too_long": "%s is too long (%d > %d)",
     "sanitize.check_in.dup_team_id": "Team ID \"%s\" already has a %s at %s, click to teleport",
+    "sanitize.check_in.dup_ord": "%s with %d \"%d\" already has exists at %s, click to teleport",
     "sanitize.check_in.empty": "%s is empty",
+    "sanitize.check_in.invalid_number": "%s is not in a valid numeric format",
+    "sanitize.check_in.out_of_range": "%s \"%d\" is not in range %s",
+
     "commands.check_in.unique_point_hover": "%s: %s\n%s: %s\n%d, %d, %d (%s)\n(click to teleport)",
+    "commands.check_in.path_point_hover": "%s: %s\n%s: %s\n%s: %s\n%s: %s\n%d, %d, %d (%s)\n(click to teleport)",
     "commands.check_in.no_found": "No %s found",
     "commands.check_in.found_total": "Found %d %s in total"
 }

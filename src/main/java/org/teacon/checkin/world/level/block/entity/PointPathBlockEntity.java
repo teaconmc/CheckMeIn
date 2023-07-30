@@ -31,7 +31,7 @@ public class PointPathBlockEntity extends BlockEntity implements Nameable, MenuP
         super.onChunkUnloaded();
         if (this.removeIfInvalid()) {
             CheckMeIn.LOGGER.info("Remove invalid {} at {}, {}, {} ({})", CheckMeIn.POINT_PATH_BLOCK.get(),
-                    this.getBlockPos().getX(), this.getBlockPos().getY(), this.getBlockPos().getZ(), Objects.requireNonNull(this.level).dimensionTypeId().registry());
+                    this.getBlockPos().getX(), this.getBlockPos().getY(), this.getBlockPos().getZ(), this.level != null ? this.level.dimensionTypeId().registry() : "null");
         }
     }
 
@@ -43,7 +43,7 @@ public class PointPathBlockEntity extends BlockEntity implements Nameable, MenuP
      * @return true if the block is not initialized, otherwise false
      */
     public boolean removeIfInvalid() {
-        if (CheckInPoints.of(Objects.requireNonNull(this.level)).map(cap -> cap.getPathPoint(this.getBlockPos()) == null)
+        if (this.level != null && CheckInPoints.of(this.level).map(cap -> cap.getPathPoint(this.getBlockPos()) == null)
                 .orElse(true)) {
             this.level.removeBlock(this.getBlockPos(), false);
             return true;

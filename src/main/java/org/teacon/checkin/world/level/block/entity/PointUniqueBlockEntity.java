@@ -14,7 +14,6 @@ import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.world.inventory.PointUniqueMenu;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 public class PointUniqueBlockEntity extends BlockEntity implements Nameable, MenuProvider {
     public PointUniqueBlockEntity(BlockPos pos, BlockState blockState) {
@@ -32,7 +31,7 @@ public class PointUniqueBlockEntity extends BlockEntity implements Nameable, Men
         super.onChunkUnloaded();
         if (this.removeIfInvalid()) {
             CheckMeIn.LOGGER.info("Remove invalid {} at {}, {}, {} ({})", CheckMeIn.POINT_UNIQUE_BLOCK.get(),
-                    this.getBlockPos().getX(), this.getBlockPos().getY(), this.getBlockPos().getZ(), Objects.requireNonNull(this.level).dimensionTypeId().registry());
+                    this.getBlockPos().getX(), this.getBlockPos().getY(), this.getBlockPos().getZ(), this.level != null ? this.level.dimensionTypeId().registry() : "null");
         }
     }
 
@@ -44,7 +43,7 @@ public class PointUniqueBlockEntity extends BlockEntity implements Nameable, Men
      * @return true if the block is not initialized, otherwise false
      */
     public boolean removeIfInvalid() {
-        if (CheckInPoints.of(Objects.requireNonNull(this.level)).map(cap -> cap.getUniquePoint(this.getBlockPos()) == null)
+        if (this.level != null && CheckInPoints.of(this.level).map(cap -> cap.getUniquePoint(this.getBlockPos()) == null)
                 .orElse(true)) {
             this.level.removeBlock(this.getBlockPos(), false);
             return true;

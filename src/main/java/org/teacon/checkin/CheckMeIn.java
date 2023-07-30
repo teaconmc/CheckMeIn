@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.teacon.checkin.client.gui.screens.inventory.PointPathScreen;
 import org.teacon.checkin.client.gui.screens.inventory.PointUniqueScreen;
 import org.teacon.checkin.network.capability.CheckInPoints;
+import org.teacon.checkin.network.protocol.game.PointPathSetDataPacket;
 import org.teacon.checkin.network.protocol.game.PointUniqueSetDataPacket;
 import org.teacon.checkin.server.commands.CheckMeInCommand;
 import org.teacon.checkin.world.inventory.PointPathMenu;
@@ -131,6 +132,8 @@ public class CheckMeIn {
             var packId = 0;
             CHANNEL.registerMessage(packId++, PointUniqueSetDataPacket.class,
                     PointUniqueSetDataPacket::write, PointUniqueSetDataPacket::new, PointUniqueSetDataPacket::handle);
+            CHANNEL.registerMessage(packId++, PointPathSetDataPacket.class,
+                    PointPathSetDataPacket::write, PointPathSetDataPacket::new, PointPathSetDataPacket::handle);
         }
     }
 

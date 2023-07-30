@@ -4,6 +4,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import org.teacon.checkin.CheckMeIn;
+import org.teacon.checkin.network.protocol.game.PointPathSetDataPacket;
 import org.teacon.checkin.world.inventory.PointPathMenu;
 
 public class PointPathScreen extends AbstractCheckPointScreen<PointPathMenu> {
@@ -66,9 +68,8 @@ public class PointPathScreen extends AbstractCheckPointScreen<PointPathMenu> {
 
     @Override
     protected void onDone() {
-        // FIXME
-//        CheckMeIn.CHANNEL.sendToServer(new PointPathSetDataPacket(this.getMenu().getBlockPos(),
-//                this.teamID.getValue(), this.pointName.getValue(), this.pathID.getValue(), this.ord.getValue()));
+        CheckMeIn.CHANNEL.sendToServer(new PointPathSetDataPacket(this.getMenu().getBlockPos(),
+                this.teamID.getValue(), this.pointName.getValue(), this.pathID.getValue(), this.ord.getValue()));
         this.onClose(); // close on client side only
     }
 }

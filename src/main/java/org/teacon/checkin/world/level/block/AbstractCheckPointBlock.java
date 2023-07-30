@@ -26,14 +26,14 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-import java.util.Objects;
-
 public abstract class AbstractCheckPointBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
     protected static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+    private final Minecraft mc;
 
     public AbstractCheckPointBlock(BlockBehaviour.Properties prop) {
         super(prop);
         this.registerDefaultState(this.getStateDefinition().any().setValue(WATERLOGGED, Boolean.FALSE));
+        this.mc = Minecraft.getInstance();
     }
 
     @Override
@@ -79,8 +79,8 @@ public abstract class AbstractCheckPointBlock extends BaseEntityBlock implements
 
     @Override
     public void animateTick(BlockState blockState, Level level, BlockPos pos, RandomSource randomSource) {
-        if (Objects.requireNonNull(Minecraft.getInstance().gameMode).getPlayerMode() == GameType.CREATIVE) {
-            if (Objects.requireNonNull(Minecraft.getInstance().player).getMainHandItem().getItem() == this.revealingItem()) {
+        if (this.mc.gameMode != null && this.mc.gameMode.getPlayerMode() == GameType.CREATIVE) {
+            if (this.mc.player != null && this.mc.player.getMainHandItem().getItem() == this.revealingItem()) {
                 level.addAlwaysVisibleParticle(new BlockParticleOption(ParticleTypes.BLOCK_MARKER, blockState),
                         pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                         0, 0, 0);

@@ -26,9 +26,8 @@ public class CheckInPoints {
 
     private static final String PATH_POINTS_KEY = "PathPoints";
     private final Map<BlockPos, PathPointData> blockPosPathPointMap = new HashMap<>();
-    private final Map<String, List<PathPointData>> teamIDPathPointsMap = new HashMap<>();
-    private final Map<String, List<PathPointData>> pathIDPathPointsMap = new HashMap<>();
 
+    private final Map<String, Map<String, Map<Integer, Collection<PathPointData>>>> teamPathIDOrdPointMap = new HashMap<>();
     public CheckInPoints() {}
 
     /*                  Unique Points                   */
@@ -39,9 +38,8 @@ public class CheckInPoints {
     public UniquePointData getUniquePoint(String teamID) {return this.teamIDUniquePointMap.get(teamID);}
 
     @SuppressWarnings("UnusedReturnValue")
-    public boolean addUniquePoint(UniquePointData pointData) {
-        if (!blockPosUniquePointMap.containsKey(pointData.pos()) && !teamIDUniquePointMap.containsKey(pointData.teamID())) {
-            blockPosUniquePointMap.put(pointData.pos(), pointData);
+    public boolean addUniquePointIfAbsent(UniquePointData pointData) {
+        if (blockPosUniquePointMap.putIfAbsent(pointData.pos(), pointData) == null) {
             teamIDUniquePointMap.put(pointData.teamID(), pointData);
             return true;
         }
@@ -62,12 +60,38 @@ public class CheckInPoints {
     @Nullable
     public PathPointData getPathPoint(BlockPos pos) {return this.blockPosPathPointMap.get(pos);}
 
+    @Nullable
+    public PathPointData getPathPoint(String teamID, String pathID, int ord) {
+        var pathIDOrdMap = this.teamPathIDOrdPointMap.get(teamID);
+        if (pathIDOrdMap == null) return null;
+        var ordMap = pathIDOrdMap.get(pathID);
+        if (ordMap == null) return null;
+        var points = ordMap.get(ord);
+        if (points == null) return null;
+        for (var p : points) if (p.ord() != null && ord == p.ord()) return p;
+        return null;
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public boolean addPathPointIfAbsent(PathPointData pointData) {
+        if (this.blockPosPathPointMap.putIfAbsent(pointData.pos(), pointData) == null) {
+            var ordMap = this.teamPathIDOrdPointMap.computeIfAbsent(pointData.teamID(), k -> new HashMap<>())
+                    .computeIfAbsent(pointData.pathID(), k -> new HashMap<>());
+            if (pointData.ord() == null) ordMap.computeIfAbsent(null, k -> new ArrayList<>()).add(pointData);
+            else ordMap.computeIfAbsent(pointData.ord(), k -> List.of(pointData));
+            return true;
+        }
+        return false;
+    }
+
     @SuppressWarnings("UnusedReturnValue")
     public boolean removePathPoint(BlockPos pos) {
         var data = blockPosPathPointMap.remove(pos);
         if (data == null) return false;
-        teamIDPathPointsMap.remove(data.teamID());
-        pathIDPathPointsMap.remove(data.pathID());
+
+        var ordMap = teamPathIDOrdPointMap.get(data.teamID()).get(data.pathID());
+        if (data.ord() == null) ordMap.get(null).removeIf(p -> data.pos().equals(p.pos()));
+        else ordMap.remove(data.ord());
         return true;
     }
 
@@ -83,26 +107,14 @@ public class CheckInPoints {
         if (tag.contains(UNIQUE_POINTS_KEY, CompoundTag.TAG_LIST)) {
             this.blockPosUniquePointMap.clear();
             this.teamIDUniquePointMap.clear();
-            for (var t : tag.getList(UNIQUE_POINTS_KEY, CompoundTag.TAG_COMPOUND)) {
-                if (t instanceof CompoundTag ct) UniquePointData.readNBT(ct).ifPresent(data -> {
-                    this.blockPosUniquePointMap.put(data.pos(), data);
-                    this.teamIDUniquePointMap.put(data.teamID(), data);
-                });
-            }
+            for (var t : tag.getList(UNIQUE_POINTS_KEY, CompoundTag.TAG_COMPOUND))
+                if (t instanceof CompoundTag ct) UniquePointData.readNBT(ct).ifPresent(this::addUniquePointIfAbsent);
         }
         if (tag.contains(PATH_POINTS_KEY, CompoundTag.TAG_LIST)) {
             this.blockPosPathPointMap.clear();
-            this.teamIDPathPointsMap.clear();
-            this.pathIDPathPointsMap.clear();
-            for (var t : tag.getList(PATH_POINTS_KEY, CompoundTag.TAG_COMPOUND)) {
-                if (t instanceof CompoundTag ct) PathPointData.readNBT(ct).ifPresent(data -> {
-                    this.blockPosPathPointMap.put(data.pos(), data);
-                    var list = this.teamIDPathPointsMap.putIfAbsent(data.teamID(), new ArrayList<>(List.of(data)));
-                    if (list != null) list.add(data);
-                    list = this.pathIDPathPointsMap.putIfAbsent(data.pathID(), new ArrayList<>(List.of(data)));
-                    if (list != null) list.add(data);
-                });
-            }
+            this.teamPathIDOrdPointMap.clear();
+            for (var t : tag.getList(PATH_POINTS_KEY, CompoundTag.TAG_COMPOUND))
+                if (t instanceof CompoundTag ct) PathPointData.readNBT(ct).ifPresent(this::addPathPointIfAbsent);
         }
     }
 

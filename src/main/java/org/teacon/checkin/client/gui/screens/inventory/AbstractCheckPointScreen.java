@@ -1,5 +1,6 @@
 package org.teacon.checkin.client.gui.screens.inventory;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
@@ -8,8 +9,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.teacon.checkin.world.level.block.entity.PointUniqueBlockEntity;
-
-import java.util.Objects;
 
 public abstract class AbstractCheckPointScreen<T extends AbstractContainerMenu> extends Screen implements MenuAccess<T> {
 
@@ -66,7 +65,7 @@ public abstract class AbstractCheckPointScreen<T extends AbstractContainerMenu> 
      * {@link PointUniqueBlockEntity#removeIfInvalid()}
      */
     protected void onCancel() {
-        Objects.requireNonNull(Objects.requireNonNull(this.minecraft).player).closeContainer();
+        if (this.minecraft != null && this.minecraft.player != null) this.minecraft.player.closeContainer();
         this.onClose(); // close on client side only
     }
 }

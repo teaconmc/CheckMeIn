@@ -3,6 +3,8 @@ package org.teacon.checkin.network.capability;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.Level;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -31,18 +33,14 @@ public record UniquePointData(BlockPos pos, String teamID, String pointName) {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        UniquePointData that = (UniquePointData) o;
-        return Objects.equals(pos, that.pos) && Objects.equals(teamID, that.teamID) && Objects.equals(pointName, that.pointName);
-    }
-
-    @Override
-    public int hashCode() {return Objects.hash(pos, teamID, pointName);}
-
-    @Override
     public String toString() {
         return "UniquePointData{" + "pos=" + pos + ", teamID='" + teamID + '\'' + ", pointName='" + pointName + '\'' + '}';
+    }
+
+    public Component toTextComponent(Level level) {
+        return Component.translatable("commands.check_in.unique_point_hover",
+                Component.translatable("container.check_in.team_id"), this.teamID,
+                Component.translatable("container.check_in.point_name"), this.pointName,
+                pos.getX(), pos.getY(), pos.getZ(), level.dimensionTypeId().location());
     }
 }
