@@ -51,7 +51,10 @@ public class PointUniqueSetDataPacket {
         if (level.getBlockEntity(this.blockPos) instanceof PointUniqueBlockEntity) {
             try {
                 var result = sanitize(player);
-                CheckInPoints.of(level).resolve().ifPresent(cap -> cap.addUniquePointIfAbsent(result));
+                CheckInPoints.of(level).resolve().ifPresent(cap -> {
+                    cap.removeUniquePoint(result.pos());
+                    cap.addUniquePointIfAbsent(result);
+                });
             } catch (SanitizeException e) {
                 player.sendSystemMessage(e.getMsg().plainCopy().withStyle(ChatFormatting.BOLD, ChatFormatting.RED));
             }
@@ -72,7 +75,9 @@ public class PointUniqueSetDataPacket {
             var cap = CheckInPoints.of(level).resolve();
             if (cap.isPresent()) {
                 var point = cap.get().getUniquePoint(teamID);
-                if (point != null) {
+                if (point != null
+                        && /* not updating the block being edited */ (!point.pos().equals(this.blockPos) || level != player.level())) {
+
                     int x = point.pos().getX(), y = point.pos().getY(), z = point.pos().getZ();
                     var dim = level.dimensionTypeId().location().toString();
                     throw new SanitizeException(Component.translatable("sanitize.check_in.dup_team_id",

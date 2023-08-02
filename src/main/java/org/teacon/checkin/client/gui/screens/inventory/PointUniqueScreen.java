@@ -55,4 +55,9 @@ public class PointUniqueScreen extends AbstractCheckPointScreen<PointUniqueMenu>
                 this.teamID.getValue(), this.pointName.getValue()));
         this.onClose(); // close on client side only
     }
+
+    public void updateGui(String teamID, String pointName) {
+        this.teamID.setValue(teamID);
+        this.pointName.setValue(pointName);
+    }
 }

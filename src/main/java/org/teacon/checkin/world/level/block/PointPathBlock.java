@@ -1,13 +1,21 @@
 package org.teacon.checkin.world.level.block;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.network.NetworkHooks;
+import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.network.capability.CheckInPoints;
+import org.teacon.checkin.network.protocol.game.PointPathScreenDataPacket;
 import org.teacon.checkin.world.level.block.entity.PointPathBlockEntity;
 
 import java.util.Collection;
@@ -19,7 +27,7 @@ public class PointPathBlock extends AbstractCheckPointBlock {
     public PointPathBlock(Properties prop) {super(prop);}
 
     @Override
-    protected Collection<Item> getRevealingItems() {return List.of(CheckMeIn.POINT_PATH_ITEM.get(), CheckMeIn.PATH_PLANNER.get());}
+    public Collection<Item> getRevealingItems() {return List.of(CheckMeIn.POINT_PATH_ITEM.get(), CheckMeIn.PATH_PLANNER.get());}
 
     @Nullable
     @Override
@@ -32,5 +40,25 @@ public class PointPathBlock extends AbstractCheckPointBlock {
             CheckInPoints.of(level).ifPresent(cap -> cap.removePathPoint(pos));
             super.onRemove(oldState, level, pos, state, p_60519_);
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public InteractionResult use(BlockState blockState, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        if (!player.getItemInHand(hand).is(CheckMeIn.PATH_PLANNER.get())
+                && level.getBlockEntity(pos) instanceof PointPathBlockEntity blockEntity
+                && player.canUseGameMasterBlocks()) {
+            if (!level.isClientSide) {
+                NetworkHooks.openScreen((ServerPlayer) player, blockEntity, pos);
+                CheckInPoints.of(level).ifPresent(cap -> {
+                    var data = cap.getPathPoint(pos);
+                    if (data == null) blockEntity.removeIfInvalid();
+                    else CheckMeIn.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+                            new PointPathScreenDataPacket(pos, data.teamID(), data.pointName(), data.pathID(), data.ord() == null ? "" : data.ord().toString()));
+                });
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
+        return InteractionResult.PASS;
     }
 }

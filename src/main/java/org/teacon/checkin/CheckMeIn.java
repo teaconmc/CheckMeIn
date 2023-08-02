@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
@@ -31,9 +32,9 @@ import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
 import org.teacon.checkin.client.gui.screens.inventory.PointPathScreen;
 import org.teacon.checkin.client.gui.screens.inventory.PointUniqueScreen;
+import org.teacon.checkin.client.renderer.blockentity.CheckPointBlockRenderer;
 import org.teacon.checkin.network.capability.CheckInPoints;
-import org.teacon.checkin.network.protocol.game.PointPathSetDataPacket;
-import org.teacon.checkin.network.protocol.game.PointUniqueSetDataPacket;
+import org.teacon.checkin.network.protocol.game.*;
 import org.teacon.checkin.server.commands.CheckMeInCommand;
 import org.teacon.checkin.world.inventory.PointPathMenu;
 import org.teacon.checkin.world.inventory.PointUniqueMenu;
@@ -135,6 +136,11 @@ public class CheckMeIn {
             var packId = 0;
             CHANNEL.registerMessage(packId++, PointUniqueSetDataPacket.class,
                     PointUniqueSetDataPacket::write, PointUniqueSetDataPacket::new, PointUniqueSetDataPacket::handle);
+            CHANNEL.registerMessage(packId++, PointUniqueScreenDataPacket.class,
+                    PointUniqueScreenDataPacket::write, PointUniqueScreenDataPacket::new, PointUniqueScreenDataPacket::handle);
+
+            CHANNEL.registerMessage(packId++, PointPathScreenDataPacket.class,
+                    PointPathScreenDataPacket::write, PointPathScreenDataPacket::new, PointPathScreenDataPacket::handle);
             CHANNEL.registerMessage(packId++, PointPathSetDataPacket.class,
                     PointPathSetDataPacket::write, PointPathSetDataPacket::new, PointPathSetDataPacket::handle);
         }
@@ -146,6 +152,14 @@ public class CheckMeIn {
         public static void clientSetup(FMLClientSetupEvent event) {
             MenuScreens.register(POINT_UNIQUE_MENU.get(), PointUniqueScreen::new);
             MenuScreens.register(POINT_PATH_MENU.get(), PointPathScreen::new);
+        }
+
+        @SubscribeEvent
+        public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+            event.registerBlockEntityRenderer(POINT_UNIQUE_BLOCK_ENTITY.get(), context ->
+                    new CheckPointBlockRenderer<>(new ResourceLocation(CheckMeIn.MODID, "textures/item/point_unique.png")));
+            event.registerBlockEntityRenderer(POINT_PATH_BLOCK_ENTITY.get(), context ->
+                    new CheckPointBlockRenderer<>(new ResourceLocation(CheckMeIn.MODID, "textures/item/point_path.png")));
         }
     }
 }

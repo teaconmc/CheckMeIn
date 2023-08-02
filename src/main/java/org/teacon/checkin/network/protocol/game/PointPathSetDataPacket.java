@@ -6,7 +6,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkEvent;
 import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.network.capability.PathPointData;
@@ -60,7 +59,10 @@ public class PointPathSetDataPacket {
         if (level.getBlockEntity(this.blockPos) instanceof PointPathBlockEntity) {
             try {
                 var result = sanitize(player);
-                CheckInPoints.of(level).resolve().ifPresent(cap -> cap.addPathPointIfAbsent(result));
+                CheckInPoints.of(level).resolve().ifPresent(cap -> {
+                    cap.removePathPoint(result.pos());
+                    cap.addPathPointIfAbsent(result);
+                });
             } catch (SanitizeException e) {
                 player.sendSystemMessage(e.getMsg().plainCopy().withStyle(ChatFormatting.BOLD, ChatFormatting.RED));
             }
@@ -99,23 +101,20 @@ public class PointPathSetDataPacket {
                 throw new SanitizeException(Component.translatable("sanitize.check_in.out_of_range",
                         Component.translatable("container.check_in.ord"), ord, "[0, 1024]"));
 
-            PathPointData dup = null;
-            Level dupLevel = null;
+            PathPointData dup;
             for (var level : player.server.getAllLevels()) {
                 var cap = CheckInPoints.of(level).resolve();
-                if (cap.isPresent() && (dup = cap.get().getPathPoint(teamID, pathID, ordNum)) != null) {
-                    dupLevel = level;
-                    break;
+                if (cap.isPresent() && (dup = cap.get().getPathPoint(teamID, pathID, ordNum)) != null
+                        && /* not updating the block being edited */ (!dup.pos().equals(this.blockPos) || level != player.level())) {
+
+                    var dim = level.dimensionTypeId().location().toString();
+                    var dupPos = dup.pos();
+                    int x = dupPos.getX(), y = dupPos.getY(), z = dupPos.getZ();
+                    throw new SanitizeException(Component.translatable("sanitize.check_in.dup_ord",
+                            Component.translatable("block.check_in.point_path"), Component.translatable("container.check_in.ord"),
+                            ordNum, Component.literal("%d, %d, %d (%s)".formatted(x, y, z, dim)).withStyle(Style.EMPTY
+                                    .withClickEvent(TextComponent.teleportTo(dup.pos(), level)))));
                 }
-            }
-            if (dup != null) {
-                var dim = dupLevel.dimensionTypeId().location().toString();
-                var dupPos = dup.pos();
-                int x = dupPos.getX(), y = dupPos.getY(), z = dupPos.getZ();
-                throw new SanitizeException(Component.translatable("sanitize.check_in.dup_ord",
-                        Component.translatable("block.check_in.point_path"), Component.translatable("container.check_in.ord"),
-                        ordNum, Component.literal("%d, %d, %d (%s)".formatted(x, y, z, dim)).withStyle(Style.EMPTY
-                                .withClickEvent(TextComponent.teleportTo(dup.pos(), dupLevel)))));
             }
         }
 

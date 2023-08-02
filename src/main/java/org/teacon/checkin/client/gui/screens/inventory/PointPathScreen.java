@@ -72,4 +72,11 @@ public class PointPathScreen extends AbstractCheckPointScreen<PointPathMenu> {
                 this.teamID.getValue(), this.pointName.getValue(), this.pathID.getValue(), this.ord.getValue()));
         this.onClose(); // close on client side only
     }
+
+    public void updateGui(String teamID, String pointName, String pathID, String ord) {
+        this.teamID.setValue(teamID);
+        this.pointName.setValue(pointName);
+        this.pathID.setValue(pathID);
+        this.ord.setValue(ord);
+    }
 }

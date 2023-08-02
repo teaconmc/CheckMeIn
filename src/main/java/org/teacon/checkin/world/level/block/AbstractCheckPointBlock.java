@@ -1,15 +1,9 @@
 package org.teacon.checkin.world.level.block;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.BlockParticleOption;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -30,12 +24,10 @@ import java.util.Collection;
 
 public abstract class AbstractCheckPointBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
     protected static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
-    private final Minecraft mc;
 
     public AbstractCheckPointBlock(BlockBehaviour.Properties prop) {
         super(prop);
         this.registerDefaultState(this.getStateDefinition().any().setValue(WATERLOGGED, Boolean.FALSE));
-        this.mc = Minecraft.getInstance();
     }
 
     @Override
@@ -47,7 +39,7 @@ public abstract class AbstractCheckPointBlock extends BaseEntityBlock implements
         return getRevealingItems().stream().anyMatch(collisionContext::isHoldingItem) ? Shapes.block() : Shapes.empty();
     }
 
-    protected abstract Collection<Item> getRevealingItems();
+    public abstract Collection<Item> getRevealingItems();
 
     @Override
     public boolean propagatesSkylightDown(BlockState blockState, BlockGetter blockGetter, BlockPos pos) {return true;}
@@ -77,16 +69,5 @@ public abstract class AbstractCheckPointBlock extends BaseEntityBlock implements
     @SuppressWarnings("deprecation")
     public FluidState getFluidState(BlockState blockState) {
         return blockState.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(blockState);
-    }
-
-    @Override
-    public void animateTick(BlockState blockState, Level level, BlockPos pos, RandomSource randomSource) {
-        if (this.mc.gameMode != null && this.mc.gameMode.getPlayerMode() == GameType.CREATIVE) {
-            if (this.mc.player != null && this.getRevealingItems().contains(this.mc.player.getMainHandItem().getItem())) {
-                level.addAlwaysVisibleParticle(new BlockParticleOption(ParticleTypes.BLOCK_MARKER, blockState),
-                        pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                        0, 0, 0);
-            }
-        }
     }
 }
