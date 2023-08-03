@@ -14,6 +14,7 @@ import org.joml.Math;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.teacon.checkin.client.renderer.ModRenderType;
+import org.teacon.checkin.configs.ClientConfig;
 import org.teacon.checkin.world.level.block.AbstractCheckPointBlock;
 
 
@@ -28,8 +29,7 @@ public class CheckPointBlockRenderer<T extends BlockEntity> implements BlockEnti
 
     @Override
     public int getViewDistance() {
-        // TODO: make this configurable
-        return 32;
+        return ClientConfig.INSTANCE.checkPointRenderDistance.get();
     }
 
     @Override
@@ -55,6 +55,8 @@ public class CheckPointBlockRenderer<T extends BlockEntity> implements BlockEnti
         var pose = lastPoseStack.pose();
         var normal = lastPoseStack.normal();
 
+//        FIXME: this "standard" way of applying outline does not work (see
+//        var vertexConsumer = this.mc.renderBuffers().outlineBufferSource().getBuffer(RenderType.entityCutoutNoCull(texture));
         var vertexConsumer = multiBufferSource.getBuffer(ModRenderType.CHECK_POINT.apply(texture));
         vertex(vertexConsumer, pose, normal, 0, 0, 0, 1);
         vertex(vertexConsumer, pose, normal, 1, 0, 1, 1);

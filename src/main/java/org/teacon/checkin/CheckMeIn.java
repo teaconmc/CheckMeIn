@@ -18,9 +18,10 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -33,6 +34,8 @@ import org.slf4j.Logger;
 import org.teacon.checkin.client.gui.screens.inventory.PointPathScreen;
 import org.teacon.checkin.client.gui.screens.inventory.PointUniqueScreen;
 import org.teacon.checkin.client.renderer.blockentity.CheckPointBlockRenderer;
+import org.teacon.checkin.configs.ClientConfig;
+import org.teacon.checkin.configs.ServerConfig;
 import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.network.protocol.game.*;
 import org.teacon.checkin.server.commands.CheckMeInCommand;
@@ -106,7 +109,10 @@ public class CheckMeIn {
             PointPathBlock.NAME, () -> IForgeMenuType.create(PointPathMenu::new));
 
     public CheckMeIn() {
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ClientConfig.CONFIG_SPEC);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ServerConfig.CONFIG_SPEC);
+
+        var modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         BLOCKS.register(modEventBus);
         BLOCK_ENTITY_TYPES.register(modEventBus);

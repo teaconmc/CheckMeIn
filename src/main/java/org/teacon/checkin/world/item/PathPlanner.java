@@ -9,6 +9,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
 import org.teacon.checkin.CheckMeIn;
+import org.teacon.checkin.configs.ServerConfig;
 import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.network.capability.PathPointData;
 import org.teacon.checkin.world.level.block.entity.PointPathBlockEntity;
@@ -21,10 +22,6 @@ public class PathPlanner extends Item {
     public static final String LAST_DIM_KEY = "LastDim";
     public static final String LAST_POS_KEY = "LastPos";
     public static final String NEXT_ORD_KEY = "NextOrd";
-
-    // TODO: make this range configurable
-    private static final int CHECK_IN_RANGE = 2;
-
 
     public PathPlanner(Properties prop) {
         super(prop);
@@ -111,8 +108,8 @@ public class PathPlanner extends Item {
             if (!lastDim.equals(dim)) {
                 player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set_different_dim", ordNew), true);
             } else {
-                var dist = Math.sqrt(lastPos.distSqr(data.pos()));
-                if (dist < CHECK_IN_RANGE * 2)
+                var dist = lastPos.distManhattan(data.pos());
+                if (dist <= ServerConfig.INSTANCE.pathPointCheckInRange.get() * 2)
                     player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set_too_close", ordNew, dist), true);
                 else
                     player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set", ordNew, dist), true);
