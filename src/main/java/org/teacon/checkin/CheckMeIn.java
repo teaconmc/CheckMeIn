@@ -5,6 +5,8 @@ import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
@@ -37,6 +39,7 @@ import org.teacon.checkin.client.renderer.blockentity.CheckPointBlockRenderer;
 import org.teacon.checkin.configs.ClientConfig;
 import org.teacon.checkin.configs.ServerConfig;
 import org.teacon.checkin.network.capability.CheckInPoints;
+import org.teacon.checkin.network.capability.GuidingManager;
 import org.teacon.checkin.network.protocol.game.*;
 import org.teacon.checkin.server.commands.CheckMeInCommand;
 import org.teacon.checkin.world.inventory.PointPathMenu;
@@ -121,7 +124,8 @@ public class CheckMeIn {
         MENU_TYPES.register(modEventBus);
 
         MinecraftForge.EVENT_BUS.addListener(CheckMeIn::registerCommands);
-        MinecraftForge.EVENT_BUS.addGenericListener(Level.class, CheckMeIn::attachCapabilities);
+        MinecraftForge.EVENT_BUS.addGenericListener(Level.class, CheckMeIn::attachLevelCapabilities);
+        MinecraftForge.EVENT_BUS.addGenericListener(Entity.class, CheckMeIn::attachEntityCapabilities);
     }
 
     public static void registerCommands(RegisterCommandsEvent event) {
@@ -130,8 +134,12 @@ public class CheckMeIn {
         CheckMeInCommand.register(dispatcher, buildContext);
     }
 
-    public static void attachCapabilities(AttachCapabilitiesEvent<Level> event) {
-        event.addCapability(CheckInPoints.ID, new CheckInPoints.Provider());
+    public static void attachLevelCapabilities(AttachCapabilitiesEvent<Level> event) {
+        if (!event.getObject().isClientSide) event.addCapability(CheckInPoints.ID, new CheckInPoints.Provider());
+    }
+
+    public static void attachEntityCapabilities(AttachCapabilitiesEvent<Entity> event) {
+        if (event.getObject() instanceof Player) event.addCapability(GuidingManager.ID, new GuidingManager.Provider());
     }
 
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -149,6 +157,9 @@ public class CheckMeIn {
                     PointPathScreenDataPacket::write, PointPathScreenDataPacket::new, PointPathScreenDataPacket::handle);
             CHANNEL.registerMessage(packId++, PointPathSetDataPacket.class,
                     PointPathSetDataPacket::write, PointPathSetDataPacket::new, PointPathSetDataPacket::handle);
+
+            CHANNEL.registerMessage(packId++, PathPlannerGuidePacket.class,
+                    PathPlannerGuidePacket::write, PathPlannerGuidePacket::new, PathPlannerGuidePacket::handle);
         }
     }
 

@@ -14,6 +14,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collector;
+import java.util.stream.Stream;
 
 @AutoRegisterCapability
 public class CheckInPoints {
@@ -70,6 +71,14 @@ public class CheckInPoints {
         if (points == null) return null;
         for (var p : points) if (p.ord() != null && ord == p.ord()) return p;
         return null;
+    }
+
+    public Stream<PathPointData> getPathPoints(String teamID, String pathID) {
+        var pathIDOrdMap = this.teamPathIDOrdPointMap.get(teamID);
+        if (pathIDOrdMap == null) return Stream.empty();
+        var ordMap = pathIDOrdMap.get(pathID);
+        if (ordMap == null) return Stream.empty();
+        return ordMap.values().stream().flatMap(Collection::stream);
     }
 
     @SuppressWarnings("UnusedReturnValue")

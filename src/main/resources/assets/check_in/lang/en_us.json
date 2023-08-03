@@ -6,7 +6,7 @@
     "item.check_in.point_path": "Path Check-in Point",
     "item.check_in.path_planner": "Path Planner",
     "item.check_in.path_planner.no_ord": "To select a path, the Check-in Point must have an ordinal number",
-    "item.check_in.path_planner.unselected": "No selected path, press shift and right click to select",
+    "item.check_in.path_planner.unselected": "Path Planner has no selected path, press shift and right click to select",
     "item.check_in.path_planner.different_team": "This Check-in point belongs to team %s, path %s, but team %s, path %s is selected",
     "item.check_in.path_planner.begin": "Start ordering from path %s, ordinal %d. Use on the next block to set ordinal to %d",
     "item.check_in.path_planner.set": "Set ordinal to %d, %f blocks from the last point",
