@@ -34,7 +34,7 @@ public class PointPathScreen extends AbstractCheckPointScreen<PointPathMenu> {
         pathID.setMaxLength(50);
         pathID.setFilter(str -> str.chars().allMatch(c -> '0' <= c && c <= '9' || 'a' <= c && c <= 'z' || c == '_'));
         this.ord = new EditBox(this.font, centerX + 4, 100, 125, 20, Component.translatable("container.check_in.ord"));
-        pathID.setMaxLength(5);
+        ord.setMaxLength(4);
         ord.setFilter(str -> str.chars().allMatch(c -> '0' <= c && c <= '9'));
         this.addWidget(this.teamID);
         this.addWidget(this.pointName);

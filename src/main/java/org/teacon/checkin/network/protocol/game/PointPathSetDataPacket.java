@@ -111,9 +111,9 @@ public class PointPathSetDataPacket {
                     var dupPos = dup.pos();
                     int x = dupPos.getX(), y = dupPos.getY(), z = dupPos.getZ();
                     throw new SanitizeException(Component.translatable("sanitize.check_in.dup_ord",
-                            Component.translatable("block.check_in.point_path"), Component.translatable("container.check_in.ord"),
-                            ordNum, Component.literal("%d, %d, %d (%s)".formatted(x, y, z, dim)).withStyle(Style.EMPTY
-                                    .withClickEvent(TextComponent.teleportTo(dup.pos(), level)))));
+                            ordNum, Component.literal("%d, %d, %d (%s)".formatted(x, y, z, dim))
+                                    .withStyle(Style.EMPTY.withClickEvent(TextComponent.teleportTo(dup.pos(), level)))
+                                    .withStyle(ChatFormatting.UNDERLINE)));
                 }
             }
         }

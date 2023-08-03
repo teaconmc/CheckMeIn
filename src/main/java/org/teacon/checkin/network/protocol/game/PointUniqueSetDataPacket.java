@@ -82,8 +82,9 @@ public class PointUniqueSetDataPacket {
                     var dim = level.dimensionTypeId().location().toString();
                     throw new SanitizeException(Component.translatable("sanitize.check_in.dup_team_id",
                             teamID, Component.translatable("container.check_in.point_unique"),
-                            Component.literal("%d, %d, %d (%s)".formatted(x, y, z, dim)).withStyle(Style.EMPTY
-                                    .withClickEvent(TextComponent.teleportTo(point.pos(), level)))));
+                            Component.literal("%d, %d, %d (%s)".formatted(x, y, z, dim))
+                                    .withStyle(Style.EMPTY.withClickEvent(TextComponent.teleportTo(point.pos(), level)))
+                                    .withStyle(ChatFormatting.UNDERLINE)));
                 }
             }
         }
