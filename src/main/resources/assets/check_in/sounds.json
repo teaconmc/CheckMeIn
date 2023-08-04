@@ -1,0 +1,8 @@
+{
+    "item.check_in.checker.shot": {
+        "subtitle": "subtitles.check_in.item.checker.shot",
+        "sounds": [
+            "check_in:shot"
+        ]
+    }
+}

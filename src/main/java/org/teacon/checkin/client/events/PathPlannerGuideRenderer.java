@@ -20,12 +20,12 @@ import java.awt.*;
 import java.util.OptionalDouble;
 
 @Mod.EventBusSubscriber(modid = CheckMeIn.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-public class RenderLevelStageEventHandler {
+public class PathPlannerGuideRenderer {
     private static final int START_COLOR = new Color(0xB8473D).getRGB();
     private static final int END_COLOR = new Color(0x3DB884).getRGB();
 
     @SubscribeEvent
-    public static void drawPathPlannerGuideline(RenderLevelStageEvent event) {
+    public static void render(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) return;
 
         var mc = Minecraft.getInstance();

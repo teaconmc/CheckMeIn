@@ -18,10 +18,10 @@ public class ServerConfig {
     public final IntValue pathPointCheckInRange;
 
     private ServerConfig(Builder builder) {
-        uniquePointCheckInRange = builder.comment("Range in which a player can check a Photography Check-in Point (Manhattan distance)")
+        uniquePointCheckInRange = builder.comment("Range in which a player can check a Photography Check-in Point (Chebyshev distance)")
                 .translation("configs.check_in.point_unique_check_range")
-                .defineInRange("point_unique_check_range", 7, 0, 1024);
-        pathPointCheckInRange = builder.comment("Range in which a player can check a Path Check-in Point (Manhattan distance)")
+                .defineInRange("point_unique_check_range", 3, 0, 1024);
+        pathPointCheckInRange = builder.comment("Range in which a player can check a Path Check-in Point (Chebyshev distance)")
                 .translation("configs.check_in.point_path_check_range")
                 .defineInRange("point_path_check_range", 2, 0, 1024);
     }

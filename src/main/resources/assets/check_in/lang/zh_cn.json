@@ -13,6 +13,7 @@
     "item.check_in.path_planner.set_too_close": "序号设置为%d，相距上个打卡点%f格，注意：打卡范围重叠",
     "item.check_in.path_planner.set_different_dim": "序号设置为%d，与上个打卡点位于不同的维度",
     "item.check_in.checker": "拍立得",
+    "item.check_in.checker.checked": "你已完成队伍%s的拍照打卡点%s的打卡",
 
     "itemGroup.check_in": "Check Me In",
 
@@ -32,10 +33,18 @@
 
     "commands.check_in.unique_point_hover": "%s：%s\n%s：%s\n%d, %d, %d (%s)\n（点击传送）",
     "commands.check_in.path_point_hover": "%s：%s\n%s：%s\n%s：%s\n%s：%s\n%d, %d, %d (%s)\n（点击传送）",
-    "commands.check_in.no_found": "没有找到%s",
-    "commands.check_in.found_total": "总计找到%d个%s",
+    "commands.check_in.list.success.none": "没有找到%s",
+    "commands.check_in.list.success.some": "总计找到%d个%s",
+    "commands.check_in.reset.unique.success.all.single": "玩家%s的所有打卡进度已被重置",
+    "commands.check_in.reset.unique.success.all.multiple": "玩家的所有打卡进度已被重置",
+    "commands.check_in.reset.unique.success.single": "在拍照打卡点%s上玩家%s的打卡进度已被重置",
+    "commands.check_in.reset.unique.success.multiple": "在拍照打卡点%s上的玩家打卡进度已被重置",
+
+    "argument.check_in.point_unique.not_found": "未知的队伍ID：%s",
 
     "configs.check_in.check_point_render_distance": "打卡点渲染距离",
     "configs.check_in.point_unique_check_range": "拍照打卡点打卡半径",
-    "configs.check_in.point_path_check_range": "路径打卡点打卡半径"
+    "configs.check_in.point_path_check_range": "路径打卡点打卡半径",
+
+    "subtitles.check_in.item.checker.shot": "拍立得：拍摄"
 }

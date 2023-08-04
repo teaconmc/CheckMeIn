@@ -31,9 +31,8 @@ public class TickEventHandler {
             var pathID = compoundTag.getString(PathPlanner.PATH_ID_KEY);
 
             CheckInPoints.of(event.player.level()).ifPresent(cap -> {
-                var points = cap.getPathPoints(teamID, pathID)
-                        .filter(p -> p.ord() != null)
-                        .sorted(Comparator.comparing(PathPointData::ord))
+                var points = cap.nonnullOrdPathPoints(teamID, pathID)
+                        .sorted(Comparator.comparing(data -> Objects.requireNonNull(data.ord())))
                         .map(PathPointData::pos)
                         .toList();
                 var focus = compoundTag.contains(PathPlanner.LAST_POS_KEY, CompoundTag.TAG_COMPOUND)

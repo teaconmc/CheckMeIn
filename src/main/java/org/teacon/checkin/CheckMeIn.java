@@ -2,9 +2,13 @@ package org.teacon.checkin;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.commands.synchronization.ArgumentTypeInfo;
+import net.minecraft.commands.synchronization.ArgumentTypeInfos;
+import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
@@ -39,11 +43,14 @@ import org.teacon.checkin.client.renderer.blockentity.CheckPointBlockRenderer;
 import org.teacon.checkin.configs.ClientConfig;
 import org.teacon.checkin.configs.ServerConfig;
 import org.teacon.checkin.network.capability.CheckInPoints;
+import org.teacon.checkin.network.capability.CheckProgress;
 import org.teacon.checkin.network.capability.GuidingManager;
 import org.teacon.checkin.network.protocol.game.*;
 import org.teacon.checkin.server.commands.CheckMeInCommand;
+import org.teacon.checkin.server.commands.PointUniqueArgument;
 import org.teacon.checkin.world.inventory.PointPathMenu;
 import org.teacon.checkin.world.inventory.PointUniqueMenu;
+import org.teacon.checkin.world.item.Checker;
 import org.teacon.checkin.world.item.PathPlanner;
 import org.teacon.checkin.world.item.PointPathItem;
 import org.teacon.checkin.world.item.PointUniqueItem;
@@ -66,6 +73,8 @@ public class CheckMeIn {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
     public static final DeferredRegister<MenuType<?>> MENU_TYPES = DeferredRegister.create(Registries.MENU, MODID);
+    public static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(Registries.SOUND_EVENT, MODID);
+    public static final DeferredRegister<ArgumentTypeInfo<?, ?>> COMMAND_ARGUMENT_TYPEs = DeferredRegister.create(Registries.COMMAND_ARGUMENT_TYPE, MODID);
 
     private static final String NETWORK_VERSION = "1";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -95,13 +104,15 @@ public class CheckMeIn {
             PointPathBlock.NAME, () -> new PointPathItem(POINT_PATH_BLOCK.get(), new Item.Properties().rarity(Rarity.EPIC)));
     public static final RegistryObject<Item> PATH_PLANNER = ITEMS.register(
             PathPlanner.NAME, () -> new PathPlanner(new Item.Properties().rarity(Rarity.EPIC)));
+    public static final RegistryObject<Item> CHECKER = ITEMS.register(
+            Checker.NAME, () -> new Checker(new Item.Properties().rarity(Rarity.EPIC)));
 
     @SuppressWarnings("unused")
     public static final RegistryObject<CreativeModeTab> CHECK_IN_TAB = CREATIVE_MODE_TABS.register("check_in_tab", () -> CreativeModeTab.builder()
             .withTabsBefore(CreativeModeTabs.OP_BLOCKS)
             .icon(() -> POINT_UNIQUE_ITEM.get().getDefaultInstance())
             .displayItems((parameters, output) -> output.acceptAll(Stream.of(
-                    POINT_UNIQUE_ITEM, POINT_PATH_ITEM, PATH_PLANNER
+                    POINT_UNIQUE_ITEM, POINT_PATH_ITEM, PATH_PLANNER, CHECKER
             ).map(RegistryObject::get).map(ItemStack::new).collect(Collectors.toList())))
             .title(Component.translatable("itemGroup.check_in"))
             .build());
@@ -110,6 +121,13 @@ public class CheckMeIn {
             PointUniqueBlock.NAME, () -> IForgeMenuType.create(PointUniqueMenu::new));
     public static final RegistryObject<MenuType<PointPathMenu>> POINT_PATH_MENU = MENU_TYPES.register(
             PointPathBlock.NAME, () -> IForgeMenuType.create(PointPathMenu::new));
+
+    public static final RegistryObject<SoundEvent> CHECKER_SHOT = SOUND_EVENTS.register("item.check_in.checker.shot", () ->
+            SoundEvent.createVariableRangeEvent(new ResourceLocation(CheckMeIn.MODID, "item.check_in.checker.shot")));
+
+    @SuppressWarnings("unused")
+    public static final RegistryObject<ArgumentTypeInfo<?, ?>> POINT_UNIQUE_ARGUMENT = COMMAND_ARGUMENT_TYPEs.register("point_unique", () ->
+            ArgumentTypeInfos.registerByClass(PointUniqueArgument.class, SingletonArgumentInfo.contextFree(PointUniqueArgument::new)));
 
     public CheckMeIn() {
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ClientConfig.CONFIG_SPEC);
@@ -122,6 +140,8 @@ public class CheckMeIn {
         ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
         MENU_TYPES.register(modEventBus);
+        SOUND_EVENTS.register(modEventBus);
+        COMMAND_ARGUMENT_TYPEs.register(modEventBus);
 
         MinecraftForge.EVENT_BUS.addListener(CheckMeIn::registerCommands);
         MinecraftForge.EVENT_BUS.addGenericListener(Level.class, CheckMeIn::attachLevelCapabilities);
@@ -139,7 +159,10 @@ public class CheckMeIn {
     }
 
     public static void attachEntityCapabilities(AttachCapabilitiesEvent<Entity> event) {
-        if (event.getObject() instanceof Player) event.addCapability(GuidingManager.ID, new GuidingManager.Provider());
+        if (event.getObject() instanceof Player) {
+            event.addCapability(GuidingManager.ID, new GuidingManager.Provider());
+            event.addCapability(CheckProgress.ID, new CheckProgress.Provider());
+        }
     }
 
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD)

@@ -13,6 +13,7 @@ import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.configs.ServerConfig;
 import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.network.capability.PathPointData;
+import org.teacon.checkin.utils.MathHelper;
 import org.teacon.checkin.world.level.block.entity.PointPathBlockEntity;
 
 public class PathPlanner extends Item {
@@ -131,12 +132,14 @@ public class PathPlanner extends Item {
         compoundTag.put(LAST_POS_KEY, NbtUtils.writeBlockPos(oldData.pos()));
         compoundTag.putInt(NEXT_ORD_KEY, ordNew + 1);
 
-        var dist = lastPos.distManhattan(oldData.pos());
-        if (!lastDim.equals(dim))
+        if (!lastDim.equals(dim)) {
             player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set_different_dim", ordNew), true);
-        else if (dist <= ServerConfig.INSTANCE.pathPointCheckInRange.get() * 2)
-            player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set_too_close", ordNew, dist), true);
-        else
-            player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set", ordNew, dist), true);
+        } else {
+            var dist = lastPos.distManhattan(oldData.pos());
+            if (MathHelper.chebyshevDist(oldData.pos(), lastPos) <= ServerConfig.INSTANCE.pathPointCheckInRange.get() * 2)
+                player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set_too_close", ordNew, dist), true);
+            else
+                player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set", ordNew, dist), true);
+        }
     }
 }

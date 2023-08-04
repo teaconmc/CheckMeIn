@@ -6,7 +6,6 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 
-import java.util.Objects;
 import java.util.Optional;
 
 public record UniquePointData(BlockPos pos, String teamID, String pointName) {
@@ -30,11 +29,6 @@ public record UniquePointData(BlockPos pos, String teamID, String pointName) {
         } else {
             return Optional.empty();
         }
-    }
-
-    @Override
-    public String toString() {
-        return "UniquePointData{" + "pos=" + pos + ", teamID='" + teamID + '\'' + ", pointName='" + pointName + '\'' + '}';
     }
 
     public Component toTextComponent(Level level) {

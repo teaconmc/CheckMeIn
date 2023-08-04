@@ -3,17 +3,16 @@ package org.teacon.checkin.network.capability;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.*;
 import net.minecraftforge.common.util.LazyOptional;
 import org.teacon.checkin.CheckMeIn;
+import org.teacon.checkin.utils.NbtHelper;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 @AutoRegisterCapability
@@ -28,7 +27,7 @@ public class CheckInPoints {
     private static final String PATH_POINTS_KEY = "PathPoints";
     private final Map<BlockPos, PathPointData> blockPosPathPointMap = new HashMap<>();
 
-    private final Map<String, Map<String, Map<Integer, Collection<PathPointData>>>> teamPathIDOrdPointMap = new HashMap<>();
+    private final Map<PathPointData.TeamPathID, NullableOrdMap> teamPathIDPathPointMap = new HashMap<>();
     public CheckInPoints() {}
 
     /*                  Unique Points                   */
@@ -63,53 +62,31 @@ public class CheckInPoints {
 
     @Nullable
     public PathPointData getPathPoint(String teamID, String pathID, int ord) {
-        var pathIDOrdMap = this.teamPathIDOrdPointMap.get(teamID);
-        if (pathIDOrdMap == null) return null;
-        var ordMap = pathIDOrdMap.get(pathID);
-        if (ordMap == null) return null;
-        var points = ordMap.get(ord);
-        if (points == null) return null;
-        for (var p : points) if (p.ord() != null && ord == p.ord()) return p;
-        return null;
+        var ordMap = this.teamPathIDPathPointMap.get(new PathPointData.TeamPathID(teamID, pathID));
+        return ordMap == null ? null : ordMap.get(ord);
     }
 
-    public Stream<PathPointData> getPathPoints(String teamID, String pathID) {
-        var pathIDOrdMap = this.teamPathIDOrdPointMap.get(teamID);
-        if (pathIDOrdMap == null) return Stream.empty();
-        var ordMap = pathIDOrdMap.get(pathID);
-        if (ordMap == null) return Stream.empty();
-        return ordMap.values().stream().flatMap(Collection::stream);
+    public Stream<PathPointData> nonnullOrdPathPoints(String teamID, String pathID) {
+        var ordMap = this.teamPathIDPathPointMap.get(new PathPointData.TeamPathID(teamID, pathID));
+        return ordMap == null ? Stream.empty() : ordMap.nonnullOrdValues().stream();
     }
 
-    @SuppressWarnings("UnusedReturnValue")
-    public boolean addPathPointIfAbsent(PathPointData pointData) {
-        if (this.blockPosPathPointMap.putIfAbsent(pointData.pos(), pointData) == null) {
-            var ordMap = this.teamPathIDOrdPointMap.computeIfAbsent(pointData.teamID(), k -> new HashMap<>())
-                    .computeIfAbsent(pointData.pathID(), k -> new HashMap<>());
-            if (pointData.ord() == null) ordMap.computeIfAbsent(null, k -> new ArrayList<>()).add(pointData);
-            else ordMap.computeIfAbsent(pointData.ord(), k -> List.of(pointData));
-            return true;
-        }
-        return false;
+    public void addPathPointIfAbsent(PathPointData pointData) {
+        if (this.blockPosPathPointMap.putIfAbsent(pointData.pos(), pointData) == null)
+            this.teamPathIDPathPointMap.computeIfAbsent(pointData.teamPathID(), k -> new NullableOrdMap()).addIfAbsent(pointData);
     }
 
-    @SuppressWarnings("UnusedReturnValue")
-    public boolean removePathPoint(BlockPos pos) {
+    public void removePathPoint(BlockPos pos) {
         var data = blockPosPathPointMap.remove(pos);
-        if (data == null) return false;
-
-        var ordMap = teamPathIDOrdPointMap.get(data.teamID()).get(data.pathID());
-        if (data.ord() == null) ordMap.get(null).removeIf(p -> data.pos().equals(p.pos()));
-        else ordMap.remove(data.ord());
-        return true;
+        if (data != null) teamPathIDPathPointMap.get(data.teamPathID()).remove(data);
     }
 
     public Collection<PathPointData> getAllPathPoints() {return this.blockPosPathPointMap.values();}
 
     /*                  Persistence                 */
     public void write(CompoundTag tag) {
-        tag.put(UNIQUE_POINTS_KEY, this.getAllUniquePoints().stream().map(UniquePointData::writeNBT).collect(toListTag()));
-        tag.put(PATH_POINTS_KEY, this.getAllPathPoints().stream().map(PathPointData::writeNBT).collect(toListTag()));
+        tag.put(UNIQUE_POINTS_KEY, this.getAllUniquePoints().stream().map(UniquePointData::writeNBT).collect(NbtHelper.toListTag()));
+        tag.put(PATH_POINTS_KEY, this.getAllPathPoints().stream().map(PathPointData::writeNBT).collect(NbtHelper.toListTag()));
     }
 
     public void read(CompoundTag tag) {
@@ -117,21 +94,14 @@ public class CheckInPoints {
             this.blockPosUniquePointMap.clear();
             this.teamIDUniquePointMap.clear();
             for (var t : tag.getList(UNIQUE_POINTS_KEY, CompoundTag.TAG_COMPOUND))
-                if (t instanceof CompoundTag ct) UniquePointData.readNBT(ct).ifPresent(this::addUniquePointIfAbsent);
+                UniquePointData.readNBT((CompoundTag) t).ifPresent(this::addUniquePointIfAbsent);
         }
         if (tag.contains(PATH_POINTS_KEY, CompoundTag.TAG_LIST)) {
             this.blockPosPathPointMap.clear();
-            this.teamPathIDOrdPointMap.clear();
+            this.teamPathIDPathPointMap.clear();
             for (var t : tag.getList(PATH_POINTS_KEY, CompoundTag.TAG_COMPOUND))
-                if (t instanceof CompoundTag ct) PathPointData.readNBT(ct).ifPresent(this::addPathPointIfAbsent);
+                PathPointData.readNBT((CompoundTag) t).ifPresent(this::addPathPointIfAbsent);
         }
-    }
-
-    private static Collector<CompoundTag, ListTag, ListTag> toListTag() {
-        return Collector.of(ListTag::new, ListTag::add, (l1, l2) -> {
-            l1.add(l2);
-            return l1;
-        });
     }
 
     public static LazyOptional<CheckInPoints> of(Level level) {
@@ -160,5 +130,30 @@ public class CheckInPoints {
         public void deserializeNBT(CompoundTag tag) {
             this.checkInPoints.read(tag);
         }
+    }
+
+    public static class NullableOrdMap {
+        private final Map<Integer, PathPointData> ordMap;
+//        private final Set<PathPointData> nullOrdMap;
+
+        public NullableOrdMap() {
+            this.ordMap = new HashMap<>();
+//            this.nullOrdMap = new HashSet<>();
+        }
+
+        public void addIfAbsent(PathPointData data) {
+            if (data.ord() != null) ordMap.putIfAbsent(data.ord(), data);
+//            else nullOrdMap.add(data);
+        }
+
+        public void remove(PathPointData data) {
+            if (data.ord() != null) ordMap.remove(data.ord());
+//            else nullOrdMap.remove(data);
+        }
+
+        @Nullable
+        public PathPointData get(int ord) {return ordMap.get(ord);}
+
+        public Collection<PathPointData> nonnullOrdValues() {return ordMap.values();}
     }
 }

@@ -52,11 +52,6 @@ public record PathPointData(BlockPos pos, String teamID, String pointName, Strin
         }
     }
 
-    @Override
-    public String toString() {
-        return "PathPointData{" + "pos=" + pos + ", teamID='" + teamID + '\'' + ", pointName='" + pointName + '\'' + ", pathID='" + pathID + '\'' + ", ord=" + ord + '}';
-    }
-
     public Component toTextComponent(Level level) {
         return Component.translatable("commands.check_in.path_point_hover",
                 Component.translatable("container.check_in.team_id"), this.teamID,
@@ -64,5 +59,24 @@ public record PathPointData(BlockPos pos, String teamID, String pointName, Strin
                 Component.translatable("container.check_in.path_id"), this.pathID,
                 Component.translatable("container.check_in.ord"), this.ord,
                 pos.getX(), pos.getY(), pos.getZ(), level.dimensionTypeId().location());
+    }
+
+    public TeamPathID teamPathID() {
+        return new TeamPathID(teamID, pathID);
+    }
+
+    public record TeamPathID(String teamID, String pathID) {
+        public CompoundTag writeNBT() {
+            var tag = new CompoundTag();
+            tag.putString(TEAM_ID_KEY, this.teamID);
+            tag.putString(PATH_ID_KEY, this.pathID);
+            return tag;
+        }
+
+        public static Optional<TeamPathID> readNBT(CompoundTag tag) {
+            return tag.contains(TEAM_ID_KEY, CompoundTag.TAG_STRING) && tag.contains(PATH_ID_KEY, CompoundTag.TAG_STRING)
+                    ? Optional.of(new TeamPathID(tag.getString(TEAM_ID_KEY), tag.getString(PATH_ID_KEY)))
+                    : Optional.empty();
+        }
     }
 }

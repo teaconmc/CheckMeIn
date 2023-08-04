@@ -2,8 +2,8 @@
 	"credit": "Made with Blockbench",
 	"texture_size": [32, 32],
 	"textures": {
-		"0": "checker",
-		"particle": "checker"
+		"0": "check_in:item/checker",
+		"particle": "check_in:item/checker"
 	},
 	"elements": [
 		{

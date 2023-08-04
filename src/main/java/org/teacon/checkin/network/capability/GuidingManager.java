@@ -36,8 +36,8 @@ public class GuidingManager {
     public static class Provider implements ICapabilityProvider {
         public static final Capability<GuidingManager> CAPABILITY = CapabilityManager.get(new CapabilityToken<>() {});
 
-        private final GuidingManager checkInPoints = new GuidingManager();
-        private final LazyOptional<GuidingManager> capability = LazyOptional.of(() -> checkInPoints);
+        private final GuidingManager guidingManager = new GuidingManager();
+        private final LazyOptional<GuidingManager> capability = LazyOptional.of(() -> guidingManager);
 
         @Override
         public @Nonnull <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
