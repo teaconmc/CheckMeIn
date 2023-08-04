@@ -1,11 +1,9 @@
 package org.teacon.checkin.network.protocol.game;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
-import org.teacon.checkin.client.gui.screens.inventory.PointUniqueScreen;
-import org.teacon.checkin.world.level.block.entity.PointUniqueBlockEntity;
+import org.teacon.checkin.client.ClientPacketHandler;
 
 import java.util.function.Supplier;
 
@@ -34,14 +32,13 @@ public class PointUniqueScreenDataPacket {
 
     public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
         var context = contextSupplier.get();
-        context.enqueueWork(() -> this.doHandle(context));
+        context.enqueueWork(() -> ClientPacketHandler.handlePointUniqueScreenDataPacket(this, context));
         context.setPacketHandled(true);
     }
 
-    public void doHandle(NetworkEvent.Context context) {
-        var mc = Minecraft.getInstance();
-        if (mc.level != null && mc.level.getBlockEntity(this.blockPos) instanceof PointUniqueBlockEntity && mc.screen instanceof PointUniqueScreen screen) {
-            screen.updateGui(this.teamID, this.pointName);
-        }
-    }
+    public BlockPos getBlockPos() {return blockPos;}
+
+    public String getTeamID() {return teamID;}
+
+    public String getPointName() {return pointName;}
 }

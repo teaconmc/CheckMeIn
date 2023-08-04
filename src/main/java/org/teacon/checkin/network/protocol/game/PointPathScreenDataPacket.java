@@ -1,11 +1,9 @@
 package org.teacon.checkin.network.protocol.game;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
-import org.teacon.checkin.client.gui.screens.inventory.PointPathScreen;
-import org.teacon.checkin.world.level.block.entity.PointPathBlockEntity;
+import org.teacon.checkin.client.ClientPacketHandler;
 
 import java.util.function.Supplier;
 
@@ -42,14 +40,17 @@ public class PointPathScreenDataPacket {
 
     public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
         var context = contextSupplier.get();
-        context.enqueueWork(() -> this.doHandle(context));
+        context.enqueueWork(() -> ClientPacketHandler.handlePointPathScreenDataPacket(this, context));
         context.setPacketHandled(true);
     }
 
-    public void doHandle(NetworkEvent.Context context) {
-        var mc = Minecraft.getInstance();
-        if (mc.level != null && mc.level.getBlockEntity(this.blockPos) instanceof PointPathBlockEntity && mc.screen instanceof PointPathScreen screen) {
-            screen.updateGui(this.teamID, this.pointName, this.pathID, this.ord);
-        }
-    }
+    public BlockPos getBlockPos() {return blockPos;}
+
+    public String getTeamID() {return teamID;}
+
+    public String getPointName() {return pointName;}
+
+    public String getPathID() {return pathID;}
+
+    public String getOrd() {return ord;}
 }
