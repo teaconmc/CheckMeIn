@@ -5,6 +5,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import org.teacon.checkin.CheckMeIn;
+import org.teacon.checkin.network.capability.UniquePointData;
 import org.teacon.checkin.network.protocol.game.PointUniqueSetDataPacket;
 import org.teacon.checkin.world.inventory.PointUniqueMenu;
 
@@ -24,9 +25,11 @@ public class PointUniqueScreen extends AbstractCheckPointScreen<PointUniqueMenu>
         super.init();
         int centerX = this.width / 2;
         this.teamID = new EditBox(this.font, centerX - 150, 60, 125, 20, Component.translatable("container.check_in.team_id"));
-        teamID.setMaxLength(50);
+        this.teamID.setMaxLength(UniquePointData.TEAM_ID_MAX_LENGTH);
+        this.teamID.setValue(this.getMenu().getData().teamID());
         this.pointName = new EditBox(this.font, centerX + 4, 60, 125, 20, Component.translatable("container.check_in.point_name"));
-        pointName.setMaxLength(50);
+        this.pointName.setMaxLength(UniquePointData.POINT_NAME_MAX_LENGTH);
+        this.pointName.setValue(this.getMenu().getData().pointName());
         this.addWidget(this.teamID);
         this.addWidget(this.pointName);
         this.setInitialFocus(this.teamID);
@@ -51,13 +54,8 @@ public class PointUniqueScreen extends AbstractCheckPointScreen<PointUniqueMenu>
 
     @Override
     protected void onDone() {
-        CheckMeIn.CHANNEL.sendToServer(new PointUniqueSetDataPacket(this.getMenu().getBlockPos(),
+        CheckMeIn.CHANNEL.sendToServer(new PointUniqueSetDataPacket(this.getMenu().getData().pos(),
                 this.teamID.getValue(), this.pointName.getValue()));
         this.onClose(); // close on client side only
-    }
-
-    public void updateGui(String teamID, String pointName) {
-        this.teamID.setValue(teamID);
-        this.pointName.setValue(pointName);
     }
 }

@@ -10,12 +10,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
-import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.network.capability.CheckInPoints;
-import org.teacon.checkin.network.protocol.game.PointUniqueScreenDataPacket;
 import org.teacon.checkin.world.level.block.entity.PointUniqueBlockEntity;
 
 import java.util.Collection;
@@ -46,15 +43,7 @@ public class PointUniqueBlock extends AbstractCheckPointBlock {
     @Override
     public InteractionResult use(BlockState blockState, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (level.getBlockEntity(pos) instanceof PointUniqueBlockEntity blockEntity && player.canUseGameMasterBlocks()) {
-            if (!level.isClientSide) {
-                NetworkHooks.openScreen((ServerPlayer) player, blockEntity, pos);
-                CheckInPoints.of(level).ifPresent(cap -> {
-                    var data = cap.getUniquePoint(pos);
-                    if (data == null) blockEntity.removeIfInvalid();
-                    else CheckMeIn.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
-                            new PointUniqueScreenDataPacket(pos, data.teamID(), data.pointName()));
-                });
-            }
+            if (!level.isClientSide) blockEntity.openScreen((ServerPlayer) player);
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
         return InteractionResult.PASS;

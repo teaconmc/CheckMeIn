@@ -61,7 +61,7 @@ public class CheckInPoints {
     public PathPointData getPathPoint(BlockPos pos) {return this.blockPosPathPointMap.get(pos);}
 
     @Nullable
-    public PathPointData getPathPoint(String teamID, String pathID, int ord) {
+    public PathPointData getPathPoint(String teamID, String pathID, short ord) {
         var ordMap = this.teamPathIDPathPointMap.get(new PathPointData.TeamPathID(teamID, pathID));
         return ordMap == null ? null : ordMap.get(ord);
     }
@@ -133,7 +133,7 @@ public class CheckInPoints {
     }
 
     public static class NullableOrdMap {
-        private final Map<Integer, PathPointData> ordMap;
+        private final Map<Short, PathPointData> ordMap;
 //        private final Set<PathPointData> nullOrdMap;
 
         public NullableOrdMap() {
@@ -152,7 +152,7 @@ public class CheckInPoints {
         }
 
         @Nullable
-        public PathPointData get(int ord) {return ordMap.get(ord);}
+        public PathPointData get(short ord) {return ordMap.get(ord);}
 
         public Collection<PathPointData> nonnullOrdValues() {return ordMap.values();}
     }

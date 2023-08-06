@@ -24,7 +24,7 @@ public class PathPlanner extends Item {
     public static final String PATH_ID_KEY = "PathID";
     public static final String LAST_DIM_KEY = "LastDim";
     public static final String LAST_POS_KEY = "LastPos";
-    public static final String NEXT_ORD_KEY = "NextOrd";
+    public static final String LAST_ORD_KEY = "LastOrd";
 
     public PathPlanner(Properties prop) {
         super(prop);
@@ -39,7 +39,7 @@ public class PathPlanner extends Item {
         var level = (ServerLevel) context.getLevel();
         var player = (ServerPlayer) context.getPlayer();
         var clickedPos = context.getClickedPos();
-        var dim = level.dimensionTypeId().location().toString();
+        var dim = level.dimension().location().toString();
         if (player == null || !player.canUseGameMasterBlocks())
             return InteractionResult.FAIL;
         if (!level.getBlockState(clickedPos).is(CheckMeIn.POINT_PATH_BLOCK.get()) || !(level.getBlockEntity(clickedPos) instanceof PointPathBlockEntity pointPathBlockEntity))
@@ -53,7 +53,7 @@ public class PathPlanner extends Item {
         if (data == null) {
             CheckMeIn.LOGGER.warn("Block {} at {}, {}, {} ({}) does not have data in level capability",
                     CheckMeIn.POINT_PATH_BLOCK.get(), clickedPos.getX(), clickedPos.getY(), clickedPos.getZ(),
-                    level.dimensionTypeId().location());
+                    level.dimension().location());
             pointPathBlockEntity.removeIfInvalid();
             return InteractionResult.FAIL;
         }
@@ -66,16 +66,16 @@ public class PathPlanner extends Item {
                 return InteractionResult.FAIL;
             }
 
-            int ord = data.ord(), ordNext = ord + 1;
+            var ord = data.ord();
             compoundTag.putString(TEAM_ID_KEY, data.teamID());
             compoundTag.putString(POINT_NAME_KEY, data.pointName());
             compoundTag.putString(PATH_ID_KEY, data.pathID());
-            compoundTag.putString(LAST_DIM_KEY, level.dimensionTypeId().location().toString());
+            compoundTag.putString(LAST_DIM_KEY, level.dimension().location().toString());
             compoundTag.put(LAST_POS_KEY, NbtUtils.writeBlockPos(data.pos()));
-            compoundTag.putInt(NEXT_ORD_KEY, ordNext);
+            compoundTag.putShort(LAST_ORD_KEY, ord);
 
             player.sendSystemMessage(Component.translatable("item.check_in.path_planner.begin",
-                    data.pathID(), ord, ordNext), true);
+                    data.pathID(), ord, ord + 1), true);
 
             return InteractionResult.SUCCESS;
 
@@ -93,8 +93,7 @@ public class PathPlanner extends Item {
         } else if (/* not clicking on the last block */ !compoundTag.getString(LAST_DIM_KEY).equals(dim)
                 || !NbtUtils.readBlockPos(compoundTag.getCompound(LAST_POS_KEY)).equals(data.pos())) {
 
-            updateAndIncOrd(compoundTag, cap, data, level, player);
-            return InteractionResult.SUCCESS;
+            return updateAndIncOrd(compoundTag, cap, data, level, player) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
         }
         return InteractionResult.FAIL;
     }
@@ -103,18 +102,23 @@ public class PathPlanner extends Item {
         return !compoundTag.contains(TEAM_ID_KEY, CompoundTag.TAG_STRING) || !compoundTag.contains(PATH_ID_KEY, CompoundTag.TAG_STRING)
                 || !compoundTag.contains(POINT_NAME_KEY, Tag.TAG_STRING)
                 || !compoundTag.contains(LAST_DIM_KEY, CompoundTag.TAG_STRING) || !compoundTag.contains(LAST_POS_KEY, CompoundTag.TAG_COMPOUND)
-                || !compoundTag.contains(NEXT_ORD_KEY, CompoundTag.TAG_INT);
+                || !compoundTag.contains(LAST_ORD_KEY, CompoundTag.TAG_SHORT);
     }
 
-    public static void updateAndIncOrd(CompoundTag compoundTag, CheckInPoints checkInPoints, PathPointData oldData, ServerLevel level, ServerPlayer player) {
-        var dim = level.dimensionTypeId().location().toString();
-        var ordNew = compoundTag.getInt(NEXT_ORD_KEY);
+    public static boolean updateAndIncOrd(CompoundTag compoundTag, CheckInPoints checkInPoints, PathPointData oldData, ServerLevel level, ServerPlayer player) {
+        var dim = level.dimension().location().toString();
+        var ordLast = compoundTag.getShort(LAST_ORD_KEY);
+        if (ordLast >= PathPointData.ORD_MAX) {
+            player.sendSystemMessage(Component.translatable("item.check_in.path_planner.reach_max_ord", PathPointData.ORD_MAX), true);
+            return false;
+        }
+        var ordCurr = (short)(ordLast + 1);
 
         // check for duplicating ordinal number
         for (var lvl : level.getServer().getAllLevels()) {
             var capTmp = CheckInPoints.of(lvl).resolve();
             if (capTmp.isEmpty()) continue;
-            var dupData = capTmp.get().getPathPoint(oldData.teamID(), oldData.pathID(), ordNew + 1);
+            var dupData = capTmp.get().getPathPoint(oldData.teamID(), oldData.pathID(), ordCurr);
             // nonnull and different from the clicked block (which means we are replacing data)
             if (dupData != null && (!dupData.pos().equals(oldData.pos()) || lvl != level)) {
                 // if there is duplication, set the number of duplicating data to null
@@ -124,22 +128,23 @@ public class PathPlanner extends Item {
         }
 
         checkInPoints.removePathPoint(oldData.pos());
-        checkInPoints.addPathPointIfAbsent(new PathPointData(oldData.pos(), oldData.teamID(), oldData.pointName(), oldData.pathID(), ordNew));
+        checkInPoints.addPathPointIfAbsent(new PathPointData(oldData.pos(), oldData.teamID(), oldData.pointName(), oldData.pathID(), ordCurr));
 
         var lastDim = compoundTag.getString(LAST_DIM_KEY);
         var lastPos = NbtUtils.readBlockPos(compoundTag.getCompound(LAST_POS_KEY));
-        compoundTag.putString(LAST_DIM_KEY, level.dimensionTypeId().location().toString());
+        compoundTag.putString(LAST_DIM_KEY, level.dimension().location().toString());
         compoundTag.put(LAST_POS_KEY, NbtUtils.writeBlockPos(oldData.pos()));
-        compoundTag.putInt(NEXT_ORD_KEY, ordNew + 1);
+        compoundTag.putShort(LAST_ORD_KEY, ordCurr);
 
         if (!lastDim.equals(dim)) {
-            player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set_different_dim", ordNew), true);
+            player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set_different_dim", ordCurr), true);
         } else {
             var dist = lastPos.distManhattan(oldData.pos());
             if (MathHelper.chebyshevDist(oldData.pos(), lastPos) <= ServerConfig.INSTANCE.pathPointCheckInRange.get() * 2)
-                player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set_too_close", ordNew, dist), true);
+                player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set_too_close", ordCurr, dist), true);
             else
-                player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set", ordNew, dist), true);
+                player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set", ordCurr, dist), true);
         }
+        return true;
     }
 }

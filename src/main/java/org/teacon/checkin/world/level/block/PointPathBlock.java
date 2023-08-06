@@ -10,12 +10,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
-import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.network.capability.CheckInPoints;
-import org.teacon.checkin.network.protocol.game.PointPathScreenDataPacket;
 import org.teacon.checkin.world.level.block.entity.PointPathBlockEntity;
 
 import java.util.Collection;
@@ -48,15 +45,7 @@ public class PointPathBlock extends AbstractCheckPointBlock {
         if (!player.getItemInHand(hand).is(CheckMeIn.PATH_PLANNER.get())
                 && level.getBlockEntity(pos) instanceof PointPathBlockEntity blockEntity
                 && player.canUseGameMasterBlocks()) {
-            if (!level.isClientSide) {
-                NetworkHooks.openScreen((ServerPlayer) player, blockEntity, pos);
-                CheckInPoints.of(level).ifPresent(cap -> {
-                    var data = cap.getPathPoint(pos);
-                    if (data == null) blockEntity.removeIfInvalid();
-                    else CheckMeIn.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
-                            new PointPathScreenDataPacket(pos, data.teamID(), data.pointName(), data.pathID(), data.ord() == null ? "" : data.ord().toString()));
-                });
-            }
+            if (!level.isClientSide) blockEntity.openScreen((ServerPlayer) player);
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
         return InteractionResult.PASS;

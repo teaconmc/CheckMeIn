@@ -24,7 +24,7 @@ public class CheckProgress {
     private static final String PROGRESS_KEY = "Progress";
 
     private final Map<String, UniquePointData> uniquePoints = new HashMap<>();
-    private final Map<PathPointData.TeamPathID, Integer> pathProgress = new HashMap<>();
+    private final Map<PathPointData.TeamPathID, Short> pathProgress = new HashMap<>();
 
     public boolean checked(UniquePointData data) {return uniquePoints.containsKey(data.teamID());}
 
@@ -38,7 +38,7 @@ public class CheckProgress {
     /**
      * Advance the check-in progress
      */
-    public void checkPathPoint(PathPointData.TeamPathID id, int ord) {pathProgress.compute(id, (k, v) -> v == null || v < ord ? ord : v);}
+    public void checkPathPoint(PathPointData.TeamPathID id, short ord) {pathProgress.compute(id, (k, v) -> v == null || v < ord ? ord : v);}
 
     public void resetUniquePoint(String teamID) {uniquePoints.remove(teamID);}
 
@@ -53,7 +53,7 @@ public class CheckProgress {
         tag.put(UNIQUE_POINTS_KEY, this.uniquePoints.values().stream().map(UniquePointData::writeNBT).collect(NbtHelper.toListTag()));
         tag.put(PATH_PROGRESS_KEY, this.pathProgress.entrySet().stream().map(entry -> {
             var compound = entry.getKey().writeNBT();
-            compound.putInt(PROGRESS_KEY, entry.getValue());
+            compound.putShort(PROGRESS_KEY, entry.getValue());
             return compound;
         }).collect(NbtHelper.toListTag()));
     }
@@ -69,8 +69,8 @@ public class CheckProgress {
             for (var t : tag.getList(PATH_PROGRESS_KEY, CompoundTag.TAG_COMPOUND)) {
                 var ct = (CompoundTag) t;
                 PathPointData.TeamPathID.readNBT(ct).ifPresent(id -> {
-                    if (ct.contains(PROGRESS_KEY, CompoundTag.TAG_INT))
-                        this.checkPathPoint(id, ct.getInt(PROGRESS_KEY));
+                    if (ct.contains(PROGRESS_KEY, CompoundTag.TAG_SHORT))
+                        this.checkPathPoint(id, ct.getShort(PROGRESS_KEY));
                 });
             }
         }

@@ -79,25 +79,25 @@ public class PointPathSetDataPacket {
 
         if (teamID.isEmpty()) throw new SanitizeException(Component.translatable("sanitize.check_in.empty",
                 Component.translatable("container.check_in.team_id")));
-        if (teamID.length() > 50) throw new SanitizeException(Component.translatable("sanitize.check_in.too_long",
+        if (teamID.length() > PathPointData.TEAM_ID_MAX_LENGTH) throw new SanitizeException(Component.translatable("sanitize.check_in.too_long",
                 Component.translatable("container.check_in.team_id"), teamID.length(), 50));
 
         if (pointName.isEmpty()) throw new SanitizeException(Component.translatable("sanitize.check_in.empty",
                 Component.translatable("container.check_in.point_name")));
-        if (pointName.length() > 50) throw new SanitizeException(Component.translatable("sanitize.check_in.too_long",
+        if (pointName.length() > PathPointData.POINT_NAME_MAX_LENGTH) throw new SanitizeException(Component.translatable("sanitize.check_in.too_long",
                 Component.translatable("container.check_in.point_name"), pointName.length(), 50));
 
         if (pathID.isEmpty()) throw new SanitizeException(Component.translatable("sanitize.check_in.empty",
                 Component.translatable("container.check_in.path_id")));
-        if (pathID.length() > 50) throw new SanitizeException(Component.translatable("sanitize.check_in.too_long",
+        if (pathID.length() > PathPointData.PATH_ID_MAX_LENGTH) throw new SanitizeException(Component.translatable("sanitize.check_in.too_long",
                 Component.translatable("container.check_in.point_name"), pointName.length(), 50));
 
-        Integer ordNum = null;
+        Short ordNum = null;
         if (!ord.isEmpty()) {
-            try {ordNum = Integer.parseInt(ord);} catch (NumberFormatException e) {
+            try {ordNum = Short.parseShort(ord);} catch (NumberFormatException e) {
                 throw new SanitizeException(Component.translatable("sanitize.check_in.invalid_number", Component.translatable("container.check_in.ord")));
             }
-            if (ordNum < 0 || ordNum > 1024)
+            if (ordNum < 0 || ordNum > PathPointData.ORD_MAX)
                 throw new SanitizeException(Component.translatable("sanitize.check_in.out_of_range",
                         Component.translatable("container.check_in.ord"), ord, "[0, 1024]"));
 
@@ -107,7 +107,7 @@ public class PointPathSetDataPacket {
                 if (cap.isPresent() && (dup = cap.get().getPathPoint(teamID, pathID, ordNum)) != null
                         && /* not updating the block being edited */ (!dup.pos().equals(this.blockPos) || level != player.level())) {
 
-                    var dim = level.dimensionTypeId().location().toString();
+                    var dim = level.dimension().location().toString();
                     var dupPos = dup.pos();
                     int x = dupPos.getX(), y = dupPos.getY(), z = dupPos.getZ();
                     throw new SanitizeException(Component.translatable("sanitize.check_in.dup_ord",

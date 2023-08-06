@@ -10,7 +10,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.network.capability.CheckInPoints;
@@ -22,29 +21,29 @@ public class PointPathItem extends BlockItem {
     public PointPathItem(Block block, Properties properties) { super(block, properties); }
 
     /**
-     * @see net.minecraft.world.item.SignItem#updateCustomBlockEntityTag(BlockPos, Level, Player, ItemStack, BlockState)
+     * After placing block, open menu and screen for editing,
+     * or copy the data from PathPlanner when planner is holding in main hand
      */
     @Override
-    @SuppressWarnings("JavadocReference")
     protected boolean updateCustomBlockEntityTag(BlockPos pos, Level level, @Nullable Player player, ItemStack itemStack, BlockState state) {
         boolean flag = super.updateCustomBlockEntityTag(pos, level, player, itemStack, state);
-        if (!level.isClientSide && !flag && player != null) {
+        if (!level.isClientSide && !flag && player != null && level.getBlockEntity(pos) instanceof PointPathBlockEntity blockEntity) {
             if (player.getMainHandItem().is(CheckMeIn.PATH_PLANNER.get())) {
-
+                // place block and copy data from PathPlanner
                 var compoundTag = player.getMainHandItem().getOrCreateTagElement(PathPlanner.PLANNER_PROPERTY_KEY);
                 if (PathPlanner.isTagIncomplete(compoundTag)) {
                     // no path is selected (fresh planner), or item data is missing
                     ((ServerPlayer) player).sendSystemMessage(Component.translatable("item.check_in.path_planner.unselected"), true);
-                    if (level.getBlockEntity(pos) instanceof PointPathBlockEntity pointPathBlockEntity)
-                        pointPathBlockEntity.removeIfInvalid();
                 } else {
+                    // actually copy data
                     CheckInPoints.of(level).ifPresent(cap -> PathPlanner.updateAndIncOrd(compoundTag, cap,
                             new PathPointData(pos, compoundTag.getString(PathPlanner.TEAM_ID_KEY), compoundTag.getString(PathPlanner.POINT_NAME_KEY), compoundTag.getString(PathPlanner.PATH_ID_KEY), null),
                             (ServerLevel) level, (ServerPlayer) player));
                 }
-            } else if (level.getBlockEntity(pos) instanceof PointPathBlockEntity pointPathBlockEntity
-                    && level.getBlockState(pos).getBlock() instanceof PointPathBlock) {
-                NetworkHooks.openScreen((ServerPlayer) player, pointPathBlockEntity, pos);
+                blockEntity.removeIfInvalid();
+            } else if (level.getBlockState(pos).getBlock() instanceof PointPathBlock) {
+                // open editing screen
+                blockEntity.openScreen((ServerPlayer) player);
             }
         }
         return flag;

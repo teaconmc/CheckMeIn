@@ -3,6 +3,7 @@ package org.teacon.checkin.network.capability;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 
@@ -12,6 +13,13 @@ public record UniquePointData(BlockPos pos, String teamID, String pointName) {
     private static final String POS_KEY = "Pos";
     private static final String TEAM_ID_KEY = "TeamID";
     private static final String POINT_NAME_KEY = "PointName";
+
+    public static final int TEAM_ID_MAX_LENGTH = 50;
+    public static final int POINT_NAME_MAX_LENGTH = 50;
+
+    public static UniquePointData empty(BlockPos pos) {
+        return new UniquePointData(pos, "", "");
+    }
 
     public CompoundTag writeNBT() {
         var tag = new CompoundTag();
@@ -31,10 +39,20 @@ public record UniquePointData(BlockPos pos, String teamID, String pointName) {
         }
     }
 
+    public void writeToBuf(FriendlyByteBuf buf) {
+        buf.writeBlockPos(this.pos);
+        buf.writeUtf(this.teamID);
+        buf.writeUtf(this.pointName);
+    }
+
+    public static UniquePointData readFromBuf(FriendlyByteBuf buf) {
+        return new UniquePointData(buf.readBlockPos(), buf.readUtf(), buf.readUtf());
+    }
+
     public Component toTextComponent(Level level) {
         return Component.translatable("commands.check_in.unique_point_hover",
                 Component.translatable("container.check_in.team_id"), this.teamID,
                 Component.translatable("container.check_in.point_name"), this.pointName,
-                pos.getX(), pos.getY(), pos.getZ(), level.dimensionTypeId().location());
+                pos.getX(), pos.getY(), pos.getZ(), level.dimension().location());
     }
 }

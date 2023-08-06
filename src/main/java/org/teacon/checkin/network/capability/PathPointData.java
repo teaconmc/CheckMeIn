@@ -3,6 +3,7 @@ package org.teacon.checkin.network.capability;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 
@@ -23,12 +24,21 @@ import java.util.Optional;
  * @param ord       The ordinal number starting from 0. This can be {@code null} for which
  *                  the point does not count toward the visiting progress
  */
-public record PathPointData(BlockPos pos, String teamID, String pointName, String pathID, @Nullable Integer ord) {
+public record PathPointData(BlockPos pos, String teamID, String pointName, String pathID, @Nullable Short ord) {
     private static final String POS_KEY = "Pos";
     private static final String TEAM_ID_KEY = "TeamID";
     private static final String POINT_NAME_KEY = "PointName";
     private static final String PATH_ID_KEY = "PathID";
     private static final String ORD_KEY = "Ord";
+
+    public static final int TEAM_ID_MAX_LENGTH = 50;
+    public static final int POINT_NAME_MAX_LENGTH = 50;
+    public static final int PATH_ID_MAX_LENGTH = 50;
+    public static final short ORD_MAX = 1024;
+
+    public static PathPointData empty(BlockPos pos) {
+        return new PathPointData(pos, "", "", "", null);
+    }
 
     public CompoundTag writeNBT() {
         var tag = new CompoundTag();
@@ -36,7 +46,7 @@ public record PathPointData(BlockPos pos, String teamID, String pointName, Strin
         tag.putString(TEAM_ID_KEY, this.teamID);
         tag.putString(POINT_NAME_KEY, this.pointName);
         tag.putString(PATH_ID_KEY, this.pathID);
-        if (this.ord != null) tag.putInt(ORD_KEY, this.ord);
+        if (this.ord != null) tag.putShort(ORD_KEY, this.ord);
         return tag;
     }
 
@@ -46,10 +56,23 @@ public record PathPointData(BlockPos pos, String teamID, String pointName, Strin
                 && tag.contains(PATH_ID_KEY, CompoundTag.TAG_STRING)) {
             return Optional.of(new PathPointData(NbtUtils.readBlockPos(tag.getCompound(POS_KEY)),
                     tag.getString(TEAM_ID_KEY), tag.getString(POINT_NAME_KEY), tag.getString(PATH_ID_KEY),
-                    tag.contains(ORD_KEY, CompoundTag.TAG_INT) ? tag.getInt(ORD_KEY) : null));
+                    tag.contains(ORD_KEY, CompoundTag.TAG_SHORT) ? tag.getShort(ORD_KEY) : null));
         } else {
             return Optional.empty();
         }
+    }
+
+    public void writeToBuf(FriendlyByteBuf buf) {
+        buf.writeBlockPos(this.pos);
+        buf.writeUtf(this.teamID);
+        buf.writeUtf(this.pointName);
+        buf.writeUtf(this.pathID);
+        buf.writeBoolean(this.ord != null); // ord exists
+        if (this.ord != null) buf.writeShort(this.ord);
+    }
+
+    public static PathPointData readFromBuf(FriendlyByteBuf buf) {
+        return new PathPointData(buf.readBlockPos(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readBoolean() ? buf.readShort() : null);
     }
 
     public Component toTextComponent(Level level) {
@@ -58,7 +81,7 @@ public record PathPointData(BlockPos pos, String teamID, String pointName, Strin
                 Component.translatable("container.check_in.point_name"), this.pointName,
                 Component.translatable("container.check_in.path_id"), this.pathID,
                 Component.translatable("container.check_in.ord"), this.ord,
-                pos.getX(), pos.getY(), pos.getZ(), level.dimensionTypeId().location());
+                pos.getX(), pos.getY(), pos.getZ(), level.dimension().location());
     }
 
     public TeamPathID teamPathID() {

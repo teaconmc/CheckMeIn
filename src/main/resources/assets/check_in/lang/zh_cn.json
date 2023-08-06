@@ -12,6 +12,7 @@
     "item.check_in.path_planner.set": "序号设置为%d，相距上个打卡点%f格",
     "item.check_in.path_planner.set_too_close": "序号设置为%d，相距上个打卡点%f格，注意：打卡范围重叠",
     "item.check_in.path_planner.set_different_dim": "序号设置为%d，与上个打卡点位于不同的维度",
+    "item.check_in.path_planner.reach_max_ord": "已达到最大打卡点序号%d，排序停止",
     "item.check_in.checker": "拍立得",
     "item.check_in.checker.checked": "你已完成队伍%s的拍照打卡点%s的打卡",
 

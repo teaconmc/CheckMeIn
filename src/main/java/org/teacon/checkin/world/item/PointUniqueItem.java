@@ -8,7 +8,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 import org.teacon.checkin.world.level.block.PointUniqueBlock;
 import org.teacon.checkin.world.level.block.entity.PointUniqueBlockEntity;
@@ -17,16 +16,15 @@ public class PointUniqueItem extends BlockItem {
     public PointUniqueItem(Block block, Properties properties) { super(block, properties); }
 
     /**
-     * @see net.minecraft.world.item.SignItem#updateCustomBlockEntityTag(BlockPos, Level, Player, ItemStack, BlockState)
+     * Open menu and screen after placing block for editing
      */
     @Override
-    @SuppressWarnings("JavadocReference")
     protected boolean updateCustomBlockEntityTag(BlockPos pos, Level level, @Nullable Player player, ItemStack itemStack, BlockState state) {
         boolean flag = super.updateCustomBlockEntityTag(pos, level, player, itemStack, state);
         if (!level.isClientSide && !flag && player != null) {
             if (level.getBlockEntity(pos) instanceof PointUniqueBlockEntity pointUniqueBlockEntity
                     && level.getBlockState(pos).getBlock() instanceof PointUniqueBlock) {
-                NetworkHooks.openScreen((ServerPlayer) player, pointUniqueBlockEntity, pos);
+                pointUniqueBlockEntity.openScreen((ServerPlayer) player);
             }
         }
         return flag;

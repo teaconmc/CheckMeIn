@@ -50,10 +50,7 @@ import org.teacon.checkin.server.commands.CheckMeInCommand;
 import org.teacon.checkin.server.commands.PointUniqueArgument;
 import org.teacon.checkin.world.inventory.PointPathMenu;
 import org.teacon.checkin.world.inventory.PointUniqueMenu;
-import org.teacon.checkin.world.item.Checker;
-import org.teacon.checkin.world.item.PathPlanner;
-import org.teacon.checkin.world.item.PointPathItem;
-import org.teacon.checkin.world.item.PointUniqueItem;
+import org.teacon.checkin.world.item.*;
 import org.teacon.checkin.world.level.block.PointPathBlock;
 import org.teacon.checkin.world.level.block.PointUniqueBlock;
 import org.teacon.checkin.world.level.block.entity.PointPathBlockEntity;
@@ -76,9 +73,9 @@ public class CheckMeIn {
     public static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(Registries.SOUND_EVENT, MODID);
     public static final DeferredRegister<ArgumentTypeInfo<?, ?>> COMMAND_ARGUMENT_TYPEs = DeferredRegister.create(Registries.COMMAND_ARGUMENT_TYPE, MODID);
 
+
     private static final String NETWORK_VERSION = "1";
-    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(CheckMeIn.MODID, "network"),
+    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(new ResourceLocation(CheckMeIn.MODID, "network"),
             () -> NETWORK_VERSION, NETWORK_VERSION::equals, NETWORK_VERSION::equals);
 
 
@@ -110,7 +107,7 @@ public class CheckMeIn {
     @SuppressWarnings("unused")
     public static final RegistryObject<CreativeModeTab> CHECK_IN_TAB = CREATIVE_MODE_TABS.register("check_in_tab", () -> CreativeModeTab.builder()
             .withTabsBefore(CreativeModeTabs.OP_BLOCKS)
-            .icon(() -> POINT_UNIQUE_ITEM.get().getDefaultInstance())
+            .icon(() -> CHECKER.get().getDefaultInstance())
             .displayItems((parameters, output) -> output.acceptAll(Stream.of(
                     POINT_UNIQUE_ITEM, POINT_PATH_ITEM, PATH_PLANNER, CHECKER
             ).map(RegistryObject::get).map(ItemStack::new).collect(Collectors.toList())))
@@ -171,18 +168,10 @@ public class CheckMeIn {
         @SuppressWarnings({"ReassignedVariable", "UnusedAssignment"})
         public static void commonSetup(FMLCommonSetupEvent event) {
             var packId = 0;
-            CHANNEL.registerMessage(packId++, PointUniqueSetDataPacket.class,
-                    PointUniqueSetDataPacket::write, PointUniqueSetDataPacket::new, PointUniqueSetDataPacket::handle);
-            CHANNEL.registerMessage(packId++, PointUniqueScreenDataPacket.class,
-                    PointUniqueScreenDataPacket::write, PointUniqueScreenDataPacket::new, PointUniqueScreenDataPacket::handle);
+            CHANNEL.registerMessage(packId++, PointUniqueSetDataPacket.class, PointUniqueSetDataPacket::write, PointUniqueSetDataPacket::new, PointUniqueSetDataPacket::handle);
+            CHANNEL.registerMessage(packId++, PointPathSetDataPacket.class, PointPathSetDataPacket::write, PointPathSetDataPacket::new, PointPathSetDataPacket::handle);
 
-            CHANNEL.registerMessage(packId++, PointPathScreenDataPacket.class,
-                    PointPathScreenDataPacket::write, PointPathScreenDataPacket::new, PointPathScreenDataPacket::handle);
-            CHANNEL.registerMessage(packId++, PointPathSetDataPacket.class,
-                    PointPathSetDataPacket::write, PointPathSetDataPacket::new, PointPathSetDataPacket::handle);
-
-            CHANNEL.registerMessage(packId++, PathPlannerGuidePacket.class,
-                    PathPlannerGuidePacket::write, PathPlannerGuidePacket::new, PathPlannerGuidePacket::handle);
+            CHANNEL.registerMessage(packId++, PathPlannerGuidePacket.class, PathPlannerGuidePacket::write, PathPlannerGuidePacket::new, PathPlannerGuidePacket::handle);
         }
     }
 

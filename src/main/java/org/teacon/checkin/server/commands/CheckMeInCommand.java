@@ -35,18 +35,18 @@ public class CheckMeInCommand {
                         .then(literal(PointPathBlock.NAME)
                                 .then(literal("point_name").executes(context -> listPathPoints(context, PathPointData::pointName)))
                                 .then(literal("team_id").executes(context -> listPathPoints(context, PathPointData::teamID)))
-                                .then(literal("path_id").executes(context -> listPathPoints(context, PathPointData::pathID)))
-                        ))
-                .then(literal("reset")
+                                .then(literal("path_id").executes(context -> listPathPoints(context, PathPointData::pathID))))
+                ).then(literal("reset")
                         .then(literal(PointUniqueBlock.NAME)
-                                .then(literal("everything")
-                                        .then(argument("targets", EntityArgument.players())
-                                                .executes(context -> resetAllUniquePointProgress(context, EntityArgument.getPlayers(context, "targets")))))
                                 .then(argument("targets", EntityArgument.players())
                                         .then(argument("points", new PointUniqueArgument()).suggests(PointUniqueArgument::suggestions)
                                                 .executes(context -> resetUniquePointProgress(context,
-                                                        EntityArgument.getPlayers(context, "targets"), PointUniqueArgument.getPoint(context, "points")
-                                                ))))))
+                                                        EntityArgument.getPlayers(context, "targets"), PointUniqueArgument.getPoint(context, "points"))))))
+                ).then(literal("reset-all")
+                        .then(literal(PointUniqueBlock.NAME)
+                                .then(argument("targets", EntityArgument.players())
+                                        .executes(context -> resetAllUniquePointProgress(context, EntityArgument.getPlayers(context, "targets")))))
+                )
         );
     }
 

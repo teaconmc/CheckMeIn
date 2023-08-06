@@ -12,6 +12,7 @@
     "item.check_in.path_planner.set": "Set ordinal to %d, %f blocks from the last point",
     "item.check_in.path_planner.set_too_close": "Set ordinal to %d, %f blocks from the last point, NOTE: check-in ranges overlap",
     "item.check_in.path_planner.set_different_dim": "Set ordinal to %d in a dimension different from last point",
+    "item.check_in.path_planner.reach_max_ord": "Max ordinal %d has been reached, ordering stops",
     "item.check_in.checker": "Camera",
     "item.check_in.checker.checked": "You have checked in at team %s's Photography Check-in Point %s",
 

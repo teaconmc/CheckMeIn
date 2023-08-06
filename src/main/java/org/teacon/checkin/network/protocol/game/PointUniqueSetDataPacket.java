@@ -68,7 +68,7 @@ public class PointUniqueSetDataPacket {
 
         if (teamID.isEmpty()) throw new SanitizeException(Component.translatable("sanitize.check_in.empty",
                 Component.translatable("container.check_in.team_id")));
-        if (teamID.length() > 50) throw new SanitizeException(Component.translatable("sanitize.check_in.too_long",
+        if (teamID.length() > UniquePointData.TEAM_ID_MAX_LENGTH) throw new SanitizeException(Component.translatable("sanitize.check_in.too_long",
                 Component.translatable("container.check_in.team_id"), teamID.length(), 50));
 
         for (var level : player.server.getAllLevels()) {
@@ -79,7 +79,7 @@ public class PointUniqueSetDataPacket {
                         && /* not updating the block being edited */ (!point.pos().equals(this.blockPos) || level != player.level())) {
 
                     int x = point.pos().getX(), y = point.pos().getY(), z = point.pos().getZ();
-                    var dim = level.dimensionTypeId().location().toString();
+                    var dim = level.dimension().location().toString();
                     throw new SanitizeException(Component.translatable("sanitize.check_in.dup_team_id",
                             teamID, Component.translatable("container.check_in.point_unique"),
                             Component.literal("%d, %d, %d (%s)".formatted(x, y, z, dim))
@@ -92,7 +92,7 @@ public class PointUniqueSetDataPacket {
 
         if (pointName.isEmpty()) throw new SanitizeException(Component.translatable("sanitize.check_in.empty",
                 Component.translatable("container.check_in.point_name")));
-        if (pointName.length() > 50) throw new SanitizeException(Component.translatable("sanitize.check_in.too_long",
+        if (pointName.length() > UniquePointData.POINT_NAME_MAX_LENGTH) throw new SanitizeException(Component.translatable("sanitize.check_in.too_long",
                 Component.translatable("container.check_in.point_name"), pointName.length(), 50));
 
         return new UniquePointData(this.blockPos, teamID, pointName);
