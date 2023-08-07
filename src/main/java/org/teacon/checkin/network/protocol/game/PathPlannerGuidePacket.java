@@ -2,38 +2,29 @@ package org.teacon.checkin.network.protocol.game;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.PacketDistributor;
+import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.client.ClientPacketHandler;
+import org.teacon.checkin.utils.NetworkHelper;
 
-import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
 public class PathPlannerGuidePacket {
-    @Nullable
-    private final BlockPos focus;
     private final List<BlockPos> guidePoints;
 
-    public PathPlannerGuidePacket(@Nullable BlockPos focus, List<BlockPos> guidePoints) {
-        this.focus = focus;
+    public PathPlannerGuidePacket(List<BlockPos> guidePoints) {
         this.guidePoints = guidePoints;
     }
 
     public PathPlannerGuidePacket(FriendlyByteBuf buf) {
-        this.focus = !buf.readBoolean() ? buf.readBlockPos() : null;
-
-        var n = buf.readInt();
-        this.guidePoints = new ArrayList<>(n);
-        while (n-- > 0) this.guidePoints.add(buf.readBlockPos());
+        this.guidePoints = NetworkHelper.readAllBlockPosOptimized(buf, false);
     }
 
     public void write(FriendlyByteBuf buf) {
-        buf.writeBoolean(this.focus == null);
-        if (this.focus != null) buf.writeBlockPos(this.focus);
-
-        buf.writeInt(this.guidePoints.size());
-        guidePoints.forEach(buf::writeBlockPos);
+        NetworkHelper.writeAllBlockPosOptimized(guidePoints, buf, false);
     }
 
     public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
@@ -42,8 +33,9 @@ public class PathPlannerGuidePacket {
         context.setPacketHandled(true);
     }
 
-    @Nullable
-    public BlockPos getFocus() {return focus;}
-
     public List<BlockPos> getGuidePoints() {return guidePoints;}
+
+    public void send(ServerPlayer player) {
+        CheckMeIn.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), this);
+    }
 }

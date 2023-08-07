@@ -67,12 +67,11 @@ public record PathPointData(BlockPos pos, String teamID, String pointName, Strin
         buf.writeUtf(this.teamID);
         buf.writeUtf(this.pointName);
         buf.writeUtf(this.pathID);
-        buf.writeBoolean(this.ord != null); // ord exists
         if (this.ord != null) buf.writeShort(this.ord);
     }
 
     public static PathPointData readFromBuf(FriendlyByteBuf buf) {
-        return new PathPointData(buf.readBlockPos(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readBoolean() ? buf.readShort() : null);
+        return new PathPointData(buf.readBlockPos(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.isReadable() ? buf.readShort() : null);
     }
 
     public Component toTextComponent(Level level) {

@@ -13,7 +13,6 @@ import org.teacon.checkin.utils.NbtHelper;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.stream.Stream;
 
 @AutoRegisterCapability
 public class CheckInPoints {
@@ -26,8 +25,9 @@ public class CheckInPoints {
 
     private static final String PATH_POINTS_KEY = "PathPoints";
     private final Map<BlockPos, PathPointData> blockPosPathPointMap = new HashMap<>();
-
     private final Map<PathPointData.TeamPathID, NullableOrdMap> teamPathIDPathPointMap = new HashMap<>();
+    private final Set<PathPointData.TeamPathID> pathsNeedSync = new HashSet<>();
+
     public CheckInPoints() {}
 
     /*                  Unique Points                   */
@@ -66,22 +66,33 @@ public class CheckInPoints {
         return ordMap == null ? null : ordMap.get(ord);
     }
 
-    public Stream<PathPointData> nonnullOrdPathPoints(String teamID, String pathID) {
+    public Collection<PathPointData> nonnullOrdPathPoints(String teamID, String pathID) {
         var ordMap = this.teamPathIDPathPointMap.get(new PathPointData.TeamPathID(teamID, pathID));
-        return ordMap == null ? Stream.empty() : ordMap.nonnullOrdValues().stream();
+        return ordMap == null ? List.of() : ordMap.nonnullOrdValues();
     }
 
     public void addPathPointIfAbsent(PathPointData pointData) {
-        if (this.blockPosPathPointMap.putIfAbsent(pointData.pos(), pointData) == null)
-            this.teamPathIDPathPointMap.computeIfAbsent(pointData.teamPathID(), k -> new NullableOrdMap()).addIfAbsent(pointData);
+        if (this.blockPosPathPointMap.putIfAbsent(pointData.pos(), pointData) == null) {
+            var id = pointData.teamPathID();
+            this.teamPathIDPathPointMap.computeIfAbsent(id, k -> new NullableOrdMap()).addIfAbsent(pointData);
+            this.pathsNeedSync.add(id);
+        }
     }
 
     public void removePathPoint(BlockPos pos) {
         var data = blockPosPathPointMap.remove(pos);
-        if (data != null) teamPathIDPathPointMap.get(data.teamPathID()).remove(data);
+        if (data != null) {
+            var id = data.teamPathID();
+            teamPathIDPathPointMap.get(id).remove(data);
+            this.pathsNeedSync.add(id);
+        }
     }
 
     public Collection<PathPointData> getAllPathPoints() {return this.blockPosPathPointMap.values();}
+
+    public Collection<PathPointData.TeamPathID> getTeamPathIDs() {return this.teamPathIDPathPointMap.keySet();}
+
+    public Collection<PathPointData.TeamPathID> pathsNeedSync() {return this.pathsNeedSync;}
 
     /*                  Persistence                 */
     public void write(CompoundTag tag) {

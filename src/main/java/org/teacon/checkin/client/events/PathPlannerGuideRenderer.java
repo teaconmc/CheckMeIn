@@ -2,6 +2,8 @@ package org.teacon.checkin.client.events;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.util.FastColor.ARGB32;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -15,6 +17,7 @@ import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.client.renderer.ModRenderType;
 import org.teacon.checkin.configs.ClientConfig;
 import org.teacon.checkin.network.capability.GuidingManager;
+import org.teacon.checkin.world.item.PathPlanner;
 
 import java.awt.*;
 import java.util.OptionalDouble;
@@ -35,8 +38,7 @@ public class PathPlannerGuideRenderer {
 
         var capOpt = GuidingManager.of(mc.player).resolve();
         if (capOpt.isPresent()) {
-            var pathPlannerPoints = capOpt.get().getPathPlannerPoints();
-            var focus = capOpt.get().getPathPlannerFocus();
+            var pathPlannerPoints = capOpt.get().clientFace.getPathPlannerPoints();
             var playerPos = player.position();
 
             var poseStack = event.getPoseStack();
@@ -51,14 +53,18 @@ public class PathPlannerGuideRenderer {
             final int viewDist = ClientConfig.INSTANCE.checkPointRenderDistance.get();
 
             // highlight focusing point
-            if (focus != null && Vec3.atCenterOf(focus).closerThan(playerPos, viewDist)) {
-                var vc = mc.renderBuffers().bufferSource().getBuffer(ModRenderType.GUIDE_LINE.apply(OptionalDouble.of(3)));
-                var center = focus.getCenter().subtract(0, 0.5, 0).toVector3f();
-                var r = 0.25f;
-                drawLine(vc, pose, normal, new Vector3f(center).sub(-r, 0, 0), new Vector3f(center).sub(0, 0, -r), 0xFFFFFFFF, 0xFFFFFFFF);
-                drawLine(vc, pose, normal, new Vector3f(center).sub(0, 0, -r), new Vector3f(center).sub(r, 0, 0), 0xFFFFFFFF, 0xFFFFFFFF);
-                drawLine(vc, pose, normal, new Vector3f(center).sub(r, 0, 0), new Vector3f(center).sub(0, 0, r), 0xFFFFFFFF, 0xFFFFFFFF);
-                drawLine(vc, pose, normal, new Vector3f(center).sub(0, 0, r), new Vector3f(center).sub(-r, 0, 0), 0xFFFFFFFF, 0xFFFFFFFF);
+            var tag = player.getMainHandItem().getOrCreateTagElement(PathPlanner.PLANNER_PROPERTY_KEY);
+            if (tag.contains(PathPlanner.LAST_POS_KEY, CompoundTag.TAG_COMPOUND)) {
+                var focus = NbtUtils.readBlockPos(tag.getCompound(PathPlanner.LAST_POS_KEY));
+                if (Vec3.atCenterOf(focus).closerThan(playerPos, viewDist)) {
+                    var vc = mc.renderBuffers().bufferSource().getBuffer(ModRenderType.GUIDE_LINE.apply(OptionalDouble.of(3)));
+                    var center = focus.getCenter().subtract(0, 0.5, 0).toVector3f();
+                    final float r = 0.25f;
+                    drawLine(vc, pose, normal, new Vector3f(center).sub(-r, 0, 0), new Vector3f(center).sub(0, 0, -r), 0xFFFFFFFF, 0xFFFFFFFF);
+                    drawLine(vc, pose, normal, new Vector3f(center).sub(0, 0, -r), new Vector3f(center).sub(r, 0, 0), 0xFFFFFFFF, 0xFFFFFFFF);
+                    drawLine(vc, pose, normal, new Vector3f(center).sub(r, 0, 0), new Vector3f(center).sub(0, 0, r), 0xFFFFFFFF, 0xFFFFFFFF);
+                    drawLine(vc, pose, normal, new Vector3f(center).sub(0, 0, r), new Vector3f(center).sub(-r, 0, 0), 0xFFFFFFFF, 0xFFFFFFFF);
+                }
             }
 
             var dTotal = 0f;
