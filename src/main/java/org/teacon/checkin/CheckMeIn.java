@@ -1,7 +1,10 @@
 package org.teacon.checkin;
 
 import com.mojang.logging.LogUtils;
+import it.unimi.dsi.fastutil.ints.IntIterators;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.renderer.item.CompassItemPropertyFunction;
+import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.commands.synchronization.ArgumentTypeInfos;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
@@ -37,17 +40,20 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
+import org.teacon.checkin.client.gui.screens.inventory.PathNavigatorScreen;
 import org.teacon.checkin.client.gui.screens.inventory.PointPathScreen;
 import org.teacon.checkin.client.gui.screens.inventory.PointUniqueScreen;
 import org.teacon.checkin.client.renderer.blockentity.CheckPointBlockRenderer;
 import org.teacon.checkin.configs.ClientConfig;
-import org.teacon.checkin.configs.ServerConfig;
+import org.teacon.checkin.configs.CommonConfig;
 import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.network.capability.CheckProgress;
 import org.teacon.checkin.network.capability.GuidingManager;
 import org.teacon.checkin.network.protocol.game.*;
 import org.teacon.checkin.server.commands.CheckMeInCommand;
+import org.teacon.checkin.server.commands.PointPathArgument;
 import org.teacon.checkin.server.commands.PointUniqueArgument;
+import org.teacon.checkin.world.inventory.PathNavigatorMenu;
 import org.teacon.checkin.world.inventory.PointPathMenu;
 import org.teacon.checkin.world.inventory.PointUniqueMenu;
 import org.teacon.checkin.world.item.*;
@@ -95,22 +101,21 @@ public class CheckMeIn {
     @SuppressWarnings("DataFlowIssue")
     public static final RegistryObject<BlockEntityType<PointPathBlockEntity>> POINT_PATH_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(
             PointPathBlock.NAME, () -> BlockEntityType.Builder.of(PointPathBlockEntity::new, POINT_PATH_BLOCK.get()).build(null));
-    public static final RegistryObject<Item> POINT_UNIQUE_ITEM = ITEMS.register(
-            PointUniqueBlock.NAME, () -> new PointUniqueItem(POINT_UNIQUE_BLOCK.get(), new Item.Properties().rarity(Rarity.EPIC)));
-    public static final RegistryObject<Item> POINT_PATH_ITEM = ITEMS.register(
-            PointPathBlock.NAME, () -> new PointPathItem(POINT_PATH_BLOCK.get(), new Item.Properties().rarity(Rarity.EPIC)));
-    public static final RegistryObject<Item> PATH_PLANNER = ITEMS.register(
-            PathPlanner.NAME, () -> new PathPlanner(new Item.Properties().rarity(Rarity.EPIC)));
-    public static final RegistryObject<Item> CHECKER = ITEMS.register(
-            Checker.NAME, () -> new Checker(new Item.Properties().rarity(Rarity.EPIC)));
+
+    private static final Item.Properties ITEM_PROPS_EPIC = new Item.Properties().rarity(Rarity.EPIC);
+    public static final RegistryObject<Item> POINT_UNIQUE_ITEM = ITEMS.register(PointUniqueBlock.NAME, () -> new PointUniqueItem(POINT_UNIQUE_BLOCK.get(), ITEM_PROPS_EPIC));
+    public static final RegistryObject<Item> POINT_PATH_ITEM = ITEMS.register(PointPathBlock.NAME, () -> new PointPathItem(POINT_PATH_BLOCK.get(), ITEM_PROPS_EPIC));
+    public static final RegistryObject<Item> PATH_PLANNER = ITEMS.register(PathPlanner.NAME, () -> new PathPlanner(ITEM_PROPS_EPIC));
+    public static final RegistryObject<Item> CHECKER = ITEMS.register(Checker.NAME, () -> new Checker(ITEM_PROPS_EPIC));
+    public static final RegistryObject<Item> NVG_PATH = ITEMS.register(PathNavigator.NAME, () -> new PathNavigator(ITEM_PROPS_EPIC));
 
     @SuppressWarnings("unused")
     public static final RegistryObject<CreativeModeTab> CHECK_IN_TAB = CREATIVE_MODE_TABS.register("check_in_tab", () -> CreativeModeTab.builder()
-            .withTabsBefore(CreativeModeTabs.OP_BLOCKS)
+            .withTabsBefore(CreativeModeTabs.OP_BLOCKS, CreativeModeTabs.SPAWN_EGGS)
             .icon(() -> CHECKER.get().getDefaultInstance())
             .displayItems((parameters, output) -> output.acceptAll(Stream.of(
-                    POINT_UNIQUE_ITEM, POINT_PATH_ITEM, PATH_PLANNER, CHECKER
-            ).map(RegistryObject::get).map(ItemStack::new).collect(Collectors.toList())))
+                    POINT_UNIQUE_ITEM, POINT_PATH_ITEM, PATH_PLANNER, CHECKER, NVG_PATH
+            ).map(RegistryObject::get).map(Item::getDefaultInstance).collect(Collectors.toList())))
             .title(Component.translatable("itemGroup.check_in"))
             .build());
 
@@ -118,17 +123,24 @@ public class CheckMeIn {
             PointUniqueBlock.NAME, () -> IForgeMenuType.create(PointUniqueMenu::new));
     public static final RegistryObject<MenuType<PointPathMenu>> POINT_PATH_MENU = MENU_TYPES.register(
             PointPathBlock.NAME, () -> IForgeMenuType.create(PointPathMenu::new));
+    public static final RegistryObject<MenuType<PathNavigatorMenu>> PATH_NAVIGATOR_MENU = MENU_TYPES.register(
+            PathNavigator.NAME, () -> IForgeMenuType.create(PathNavigatorMenu::new));
 
     public static final RegistryObject<SoundEvent> CHECKER_SHOT = SOUND_EVENTS.register("item.check_in.checker.shot", () ->
             SoundEvent.createVariableRangeEvent(new ResourceLocation(CheckMeIn.MODID, "item.check_in.checker.shot")));
+    public static final RegistryObject<SoundEvent> CHECK_PATH = SOUND_EVENTS.register("entity.check_in.player.check_path", () ->
+            SoundEvent.createVariableRangeEvent(new ResourceLocation(CheckMeIn.MODID, "entity.check_in.player.check_path")));
 
     @SuppressWarnings("unused")
     public static final RegistryObject<ArgumentTypeInfo<?, ?>> POINT_UNIQUE_ARGUMENT = COMMAND_ARGUMENT_TYPEs.register("point_unique", () ->
             ArgumentTypeInfos.registerByClass(PointUniqueArgument.class, SingletonArgumentInfo.contextFree(PointUniqueArgument::new)));
+    @SuppressWarnings("unused")
+    public static final RegistryObject<ArgumentTypeInfo<?, ?>> POINT_PATH_ARGUMENT = COMMAND_ARGUMENT_TYPEs.register("point_path", () ->
+            ArgumentTypeInfos.registerByClass(PointPathArgument.class, SingletonArgumentInfo.contextFree(PointPathArgument::new)));
 
     public CheckMeIn() {
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ClientConfig.CONFIG_SPEC);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ServerConfig.CONFIG_SPEC);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CommonConfig.CONFIG_SPEC);
 
         var modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
@@ -165,13 +177,18 @@ public class CheckMeIn {
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
     public static class CommonModEvents {
         @SubscribeEvent
-        @SuppressWarnings({"ReassignedVariable", "UnusedAssignment"})
         public static void commonSetup(FMLCommonSetupEvent event) {
-            var packId = 0;
-            CHANNEL.registerMessage(packId++, PointUniqueSetDataPacket.class, PointUniqueSetDataPacket::write, PointUniqueSetDataPacket::new, PointUniqueSetDataPacket::handle);
-            CHANNEL.registerMessage(packId++, PointPathSetDataPacket.class, PointPathSetDataPacket::write, PointPathSetDataPacket::new, PointPathSetDataPacket::handle);
+            var packId = IntIterators.fromTo(0, Integer.MAX_VALUE);
+            CHANNEL.registerMessage(packId.nextInt(), PointUniqueSetDataPacket.class, PointUniqueSetDataPacket::write, PointUniqueSetDataPacket::new, PointUniqueSetDataPacket::handle);
+            CHANNEL.registerMessage(packId.nextInt(), PointPathSetDataPacket.class, PointPathSetDataPacket::write, PointPathSetDataPacket::new, PointPathSetDataPacket::handle);
 
-            CHANNEL.registerMessage(packId++, PathPlannerGuidePacket.class, PathPlannerGuidePacket::write, PathPlannerGuidePacket::new, PathPlannerGuidePacket::handle);
+            CHANNEL.registerMessage(packId.nextInt(), PathPlannerGuidePacket.class, PathPlannerGuidePacket::write, PathPlannerGuidePacket::new, PathPlannerGuidePacket::handle);
+
+            CHANNEL.registerMessage(packId.nextInt(), PathNaviPageRequestPacket.class, PathNaviPageRequestPacket::write, PathNaviPageRequestPacket::new, PathNaviPageRequestPacket::handle);
+            CHANNEL.registerMessage(packId.nextInt(), PathNaviPageResponsePacket.class, PathNaviPageResponsePacket::write, PathNaviPageResponsePacket::new, PathNaviPageResponsePacket::handle);
+            CHANNEL.registerMessage(packId.nextInt(), PathNaviTpBackPacket.class, PathNaviTpBackPacket::write, PathNaviTpBackPacket::new, PathNaviTpBackPacket::handle);
+            CHANNEL.registerMessage(packId.nextInt(), PathNaviErasePacket.class, PathNaviErasePacket::write, PathNaviErasePacket::new, PathNaviErasePacket::handle);
+            CHANNEL.registerMessage(packId.nextInt(), PathNaviSetGuidingPathPacket.class, PathNaviSetGuidingPathPacket::write, PathNaviSetGuidingPathPacket::new, PathNaviSetGuidingPathPacket::handle);
         }
     }
 
@@ -179,8 +196,15 @@ public class CheckMeIn {
     public static class ClientModEvents {
         @SubscribeEvent
         public static void clientSetup(FMLClientSetupEvent event) {
-            MenuScreens.register(POINT_UNIQUE_MENU.get(), PointUniqueScreen::new);
-            MenuScreens.register(POINT_PATH_MENU.get(), PointPathScreen::new);
+            event.enqueueWork(() -> {
+                // FIXME: server should send client the globalpos of the next point in the path
+                ItemProperties.register(NVG_PATH.get(), new ResourceLocation("angle"), new CompassItemPropertyFunction(
+                        (level, itemStack, entity) -> null));
+
+                MenuScreens.register(POINT_UNIQUE_MENU.get(), PointUniqueScreen::new);
+                MenuScreens.register(POINT_PATH_MENU.get(), PointPathScreen::new);
+                MenuScreens.register(PATH_NAVIGATOR_MENU.get(), PathNavigatorScreen::new);
+            });
         }
 
         @SubscribeEvent

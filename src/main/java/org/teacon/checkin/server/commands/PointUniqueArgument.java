@@ -15,11 +15,12 @@ import org.teacon.checkin.network.capability.UniquePointData;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class PointUniqueArgument implements ArgumentType<String> {
-    public static final DynamicCommandExceptionType NO_POINT_FOUND = new DynamicCommandExceptionType(arg ->
-            Component.translatable("argument.check_in.point_unique.not_found", arg));
+    public static final DynamicCommandExceptionType NO_POINT_FOUND = new DynamicCommandExceptionType(teamID ->
+            Component.translatable("argument.check_in.point_unique.not_found", teamID));
 
     @Override
     public String parse(StringReader reader) throws CommandSyntaxException {
@@ -31,7 +32,9 @@ public class PointUniqueArgument implements ArgumentType<String> {
                 .map(lvl -> CheckInPoints.of(lvl).resolve())
                 .filter(Optional::isPresent)
                 .flatMap(opt -> opt.get().getAllUniquePoints().stream())
-                .map(UniquePointData::teamID), builder);
+                .map(UniquePointData::teamID)
+                .map(PointUniqueArgument::escapeString)
+                .collect(Collectors.toSet()), builder);
     }
 
     public static UniquePointData getPoint(CommandContext<CommandSourceStack> context, String id) throws CommandSyntaxException {
@@ -42,6 +45,26 @@ public class PointUniqueArgument implements ArgumentType<String> {
                 .flatMap(opt -> opt.get().getAllUniquePoints().stream())
                 .filter(p -> p.teamID().equals(teamID))
                 .findAny()
-                .orElseThrow(() -> NO_POINT_FOUND.create(id));
+                .orElseThrow(() -> NO_POINT_FOUND.create(teamID));
+    }
+
+    protected static String escapeString(String str) {
+        var chars = str.toCharArray();
+        var quote = false;
+        for (var chr : chars) {
+            if (!StringReader.isAllowedInUnquotedString(chr)) {
+                quote = true;
+                break;
+            }
+        }
+        if (!quote) return str;
+
+        var sb = new StringBuilder().append('"');
+        for (var chr : chars) {
+            if (chr == '"') sb.append('"');
+            sb.append(chr);
+        }
+        sb.append('"');
+        return sb.toString();
     }
 }

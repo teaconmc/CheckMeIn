@@ -15,6 +15,8 @@
     "item.check_in.path_planner.reach_max_ord": "Max ordinal %d has been reached, ordering stops",
     "item.check_in.checker": "Camera",
     "item.check_in.checker.checked": "You have checked in at team %s's Photography Check-in Point %s",
+    "item.check_in.nvg_path": "Path Check-in Point Compass",
+    "item.check_in.nvg_path.path_not_start": "You did not check in at any point in this path",
 
     "itemGroup.check_in": "Check Me In",
 
@@ -24,6 +26,9 @@
     "container.check_in.point_name": "Point Name",
     "container.check_in.path_id": "Path ID",
     "container.check_in.ord": "Ordinal Number",
+    "container.check_in.nvg_path": "Navigator",
+    "container.check_in.navigating": "Navigating",
+    "container.check_in.candidates": "Candidates",
 
     "sanitize.check_in.too_long": "%s is too long (%d > %d)",
     "sanitize.check_in.dup_team_id": "Team ID \"%s\" already has a %s at %s, click to teleport",
@@ -38,14 +43,21 @@
     "commands.check_in.list.success.some": "Found %d %s in total",
     "commands.check_in.reset.unique.success.all.single": "All progress of Photography Check-in Points is reset for %s",
     "commands.check_in.reset.unique.success.all.multiple": "All progress of Photography Check-in Points is reset for players",
-    "commands.check_in.reset.unique.success.single": "The progress of Photography Check-in Point %s is reset for %s",
-    "commands.check_in.reset.unique.success.multiple": "The progress of Photography Check-in Point %s is reset for players",
+    "commands.check_in.reset.unique.success.single": "The progress of Photography Check-in Point with Team ID %s is reset for %s",
+    "commands.check_in.reset.unique.success.multiple": "The progress of Photography Check-in Point with Team ID %s is reset for players",
+    "commands.check_in.reset.path.success.all.single": "All progress of Path Check-in Points is reset for %s",
+    "commands.check_in.reset.path.success.all.multiple": "All progress of Path Check-in Points is reset for players",
+    "commands.check_in.reset.path.success.single": "The progress of Path Check-in Points with Team ID %s, Path ID %s is reset for %s",
+    "commands.check_in.reset.path.success.multiple": "The progress of Path Check-in Points with Team ID %s, Path ID %s is reset for players",
 
     "argument.check_in.point_unique.not_found": "Unknown Team ID: %s",
+    "argument.check_in.point_path.not_complete": "Incomplete (expected Team ID and Path ID)",
+    "argument.check_in.point_path.not_found": "Unknown Team ID: %s and Path ID: %s",
 
     "configs.check_in.check_point_render_distance": "Check-point Render Distance",
     "configs.check_in.point_unique_check_range": "Photography Check-in Point Check Range",
     "configs.check_in.point_path_check_range": "Path Check-in Point Check Range",
 
-    "subtitles.check_in.item.checker.shot": "Camera snaps"
+    "subtitles.check_in.item.checker.shot": "Camera snaps",
+    "subtitles.check_in.entity.player.check_path": "Player checks path"
 }

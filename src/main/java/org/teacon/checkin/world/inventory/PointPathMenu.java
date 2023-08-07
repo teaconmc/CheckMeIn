@@ -15,7 +15,7 @@ public class PointPathMenu extends AbstractContainerMenu {
     private final PathPointData data;
 
     public PointPathMenu(int windowId, @SuppressWarnings("unused") Inventory inventory, FriendlyByteBuf buf) {
-        this(windowId, PathPointData.readFromBuf(buf)); // BlockPos is written in createMenu method of BlockEntity
+        this(windowId, PathPointData.readFromBuf(buf));
     }
 
     public PointPathMenu(int windowId, PathPointData data) {

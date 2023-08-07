@@ -46,7 +46,7 @@ public class PointUniqueBlockEntity extends BlockEntity implements Nameable, Men
      * @return true if the block is not initialized, otherwise false
      */
     public boolean removeIfInvalid() {
-        if (this.level != null && CheckInPoints.of(this.level).map(cap -> cap.getUniquePoint(this.getBlockPos()) == null)
+        if (this.level != null && !this.level.isClientSide && CheckInPoints.of(this.level).map(cap -> cap.getUniquePoint(this.getBlockPos()) == null)
                 .orElse(true)) {
             this.level.removeBlock(this.getBlockPos(), false);
             return true;

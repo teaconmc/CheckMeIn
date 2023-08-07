@@ -15,6 +15,8 @@
     "item.check_in.path_planner.reach_max_ord": "已达到最大打卡点序号%d，排序停止",
     "item.check_in.checker": "拍立得",
     "item.check_in.checker.checked": "你已完成队伍%s的拍照打卡点%s的打卡",
+    "item.check_in.nvg_path": "路径打卡点指南针",
+    "item.check_in.nvg_path.path_not_start": "你没有在这条路径的任何打卡点打卡",
 
     "itemGroup.check_in": "Check Me In",
 
@@ -24,6 +26,9 @@
     "container.check_in.point_name": "打卡点名称",
     "container.check_in.path_id": "路径ID",
     "container.check_in.ord": "序号",
+    "container.check_in.nvg_path": "打卡点指南针",
+    "container.check_in.navigating": "正在导航",
+    "container.check_in.candidates": "可用导航点",
 
     "sanitize.check_in.too_long": "%s过长（%d > %d）",
     "sanitize.check_in.dup_team_id": "队伍ID“%s”已经有了一个%s，位于%s，点击传送",
@@ -36,16 +41,23 @@
     "commands.check_in.path_point_hover": "%s：%s\n%s：%s\n%s：%s\n%s：%s\n%d, %d, %d (%s)\n（点击传送）",
     "commands.check_in.list.success.none": "没有找到%s",
     "commands.check_in.list.success.some": "总计找到%d个%s",
-    "commands.check_in.reset.unique.success.all.single": "玩家%s的所有打卡进度已被重置",
-    "commands.check_in.reset.unique.success.all.multiple": "玩家的所有打卡进度已被重置",
-    "commands.check_in.reset.unique.success.single": "在拍照打卡点%s上玩家%s的打卡进度已被重置",
-    "commands.check_in.reset.unique.success.multiple": "在拍照打卡点%s上的玩家打卡进度已被重置",
+    "commands.check_in.reset.unique.success.all.single": "玩家%s的所有拍照打卡进度已被重置",
+    "commands.check_in.reset.unique.success.all.multiple": "玩家的所有拍照打卡进度已被重置",
+    "commands.check_in.reset.unique.success.single": "在队伍ID：%s的拍照打卡点上玩家%s的打卡进度已被重置",
+    "commands.check_in.reset.unique.success.multiple": "在队伍ID：%s的拍照打卡点%s上的玩家打卡进度已被重置",
+    "commands.check_in.reset.path.success.all.single": "玩家%s的所有路径打卡点进度已被重置",
+    "commands.check_in.reset.path.success.all.multiple": "玩家的所有路径打卡点进度已被重置",
+    "commands.check_in.reset.path.success.single": "在队伍ID：%s，路径ID：%s的路径上玩家%s的打卡进度已被重置",
+    "commands.check_in.reset.path.success.multiple": "在队伍ID：%s，路径ID：%s的路径上的玩家打卡进度已被重置",
 
     "argument.check_in.point_unique.not_found": "未知的队伍ID：%s",
+    "argument.check_in.point_path.not_complete": "不完整（应有队伍ID和路径ID）",
+    "argument.check_in.point_path.not_found": "未知的队伍ID：%s和路径ID：%s",
 
     "configs.check_in.check_point_render_distance": "打卡点渲染距离",
     "configs.check_in.point_unique_check_range": "拍照打卡点打卡半径",
     "configs.check_in.point_path_check_range": "路径打卡点打卡半径",
 
-    "subtitles.check_in.item.checker.shot": "拍立得：拍摄"
+    "subtitles.check_in.item.checker.shot": "拍立得：拍摄",
+    "subtitles.check_in.entity.player.check_path": "玩家：路径打卡"
 }

@@ -12,7 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.client.events.ScreenshotNoGuiTaker;
-import org.teacon.checkin.configs.ServerConfig;
+import org.teacon.checkin.configs.CommonConfig;
 import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.network.capability.CheckProgress;
 import org.teacon.checkin.network.capability.UniquePointData;
@@ -35,9 +35,9 @@ public class Checker extends Item {
         if (!level.isClientSide) {
             CheckInPoints.of(level).ifPresent(points -> CheckProgress.of((ServerPlayer) player).ifPresent(progress -> {
                 final BlockPos playerPos = player.blockPosition();
-                final int r = ServerConfig.INSTANCE.uniquePointCheckInRange.get();
+                final int r = CommonConfig.INSTANCE.uniquePointCheckInRange.get();
                 points.getAllUniquePoints().stream()
-                        .filter(data -> MathHelper.chebyshevDist(data.pos(), playerPos) <= r && !progress.checked(data))
+                        .filter(data -> MathHelper.chebyshevDist(data.pos(), playerPos) <= r && !progress.isUniquePointChecked(data))
                         .min(Comparator.comparing(data -> data.pos().distSqr(playerPos)))
                         .ifPresent(closest -> checkUniquePoint(level, progress, (ServerPlayer) player, closest));
             }));

@@ -2,8 +2,10 @@ package org.teacon.checkin.network.capability;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.*;
 import net.minecraftforge.common.util.LazyOptional;
 import org.teacon.checkin.CheckMeIn;
@@ -36,13 +38,20 @@ public class GuidingManager {
     public static class ServerFace {
         @Nullable
         private PathPointData.TeamPathID pathPlannerFocusID = null;
+        @Nullable
+        private ResourceKey<Level> dimension = null;
 
         @Nullable
         public PathPointData.TeamPathID getPathPlannerFocusID() {return pathPlannerFocusID;}
 
+        @Nullable
+        public ResourceKey<Level> getDimension() {return dimension;}
+
         public void setPathPlannerFocusID(PathPointData.TeamPathID pathPlannerFocusID) {
             this.pathPlannerFocusID = pathPlannerFocusID;
         }
+
+        public void setDimension(@Nullable ResourceKey<Level> dimension) {this.dimension = dimension;}
     }
 
     public static class Provider implements ICapabilityProvider {

@@ -42,10 +42,19 @@ public class CheckMeInCommand {
                                         .then(argument("points", new PointUniqueArgument()).suggests(PointUniqueArgument::suggestions)
                                                 .executes(context -> resetUniquePointProgress(context,
                                                         EntityArgument.getPlayers(context, "targets"), PointUniqueArgument.getPoint(context, "points"))))))
+                        .then(literal(PointPathBlock.NAME)
+                                .then(argument("targets", EntityArgument.players())
+                                        .then(argument("points", new PointPathArgument()).suggests(PointPathArgument::suggestions)
+                                                .executes(context -> resetPathProgress(context,
+                                                        EntityArgument.getPlayers(context, "targets"), PointPathArgument.getPoint(context, "points"))))))
                 ).then(literal("reset-all")
                         .then(literal(PointUniqueBlock.NAME)
                                 .then(argument("targets", EntityArgument.players())
                                         .executes(context -> resetAllUniquePointProgress(context, EntityArgument.getPlayers(context, "targets")))))
+                        .then(literal(PointPathBlock.NAME)
+                                .then(argument("targets", EntityArgument.players())
+                                        .executes(context -> resetAllPathProgress(context, EntityArgument.getPlayers(context, "targets"))))
+                        )
                 )
         );
     }
@@ -67,10 +76,33 @@ public class CheckMeInCommand {
 
         if (targets.size() == 1) {
             context.getSource().sendSuccess(() -> Component.translatable("commands.check_in.reset.unique.success.single",
-                    data.pointName(), targets.iterator().next().getDisplayName()), true);
+                    data.teamID(), targets.iterator().next().getDisplayName()), true);
         } else {
-            context.getSource().sendSuccess(() -> Component.translatable("commands.check_in.reset.unique.success.multiple",
-                    data.pointName(), targets.iterator().next().getDisplayName()), true);
+            context.getSource().sendSuccess(() -> Component.translatable("commands.check_in.reset.unique.success.multiple", data.teamID()), true);
+        }
+        return targets.size();
+    }
+
+    private static int resetAllPathProgress(CommandContext<CommandSourceStack> context, Collection<ServerPlayer> targets) {
+        targets.forEach(target -> CheckProgress.of(target).ifPresent(CheckProgress::resetAllPaths));
+
+        if (targets.size() == 1) {
+            context.getSource().sendSuccess(() -> Component.translatable("commands.check_in.reset.path.success.all.single",
+                    targets.iterator().next().getDisplayName()), true);
+        } else {
+            context.getSource().sendSuccess(() -> Component.translatable("commands.check_in.reset.path.success.all.multiple"), true);
+        }
+        return targets.size();
+    }
+
+    private static int resetPathProgress(CommandContext<CommandSourceStack> context, Collection<ServerPlayer> targets, PathPointData.TeamPathID data) {
+        targets.forEach(target -> CheckProgress.of(target).ifPresent(progress -> progress.resetPath(data.teamID(), data.pathID())));
+
+        if (targets.size() == 1) {
+            context.getSource().sendSuccess(() -> Component.translatable("commands.check_in.reset.path.success.single",
+                    data.teamID(), data.pathID(), targets.iterator().next().getDisplayName()), true);
+        } else {
+            context.getSource().sendSuccess(() -> Component.translatable("commands.check_in.reset.path.success.multiple", data.teamID(), data.pathID()), true);
         }
         return targets.size();
     }

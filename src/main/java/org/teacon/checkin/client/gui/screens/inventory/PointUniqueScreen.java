@@ -40,13 +40,10 @@ public class PointUniqueScreen extends AbstractCheckPointScreen<PointUniqueMenu>
         this.renderBackground(guiGraphics);
 
         int centerX = this.width / 2;
-        guiGraphics.drawCenteredString(this.font, Component.translatable("container.check_in.point_unique"),
-                centerX, 20, TITLE_COLOR);
-        guiGraphics.drawString(this.font, Component.translatable("container.check_in.team_id"),
-                centerX - 150, 50, LABEL_COLOR);
+        guiGraphics.drawCenteredString(this.font, Component.translatable("container.check_in.point_unique"), centerX, 20, TITLE_COLOR);
+        guiGraphics.drawString(this.font, Component.translatable("container.check_in.team_id"), centerX - 150, 50, LABEL_COLOR);
         this.teamID.render(guiGraphics, mouseX, mouseY, p_282465_);
-        guiGraphics.drawString(this.font, Component.translatable("container.check_in.point_name"),
-                centerX + 4, 50, LABEL_COLOR);
+        guiGraphics.drawString(this.font, Component.translatable("container.check_in.point_name"), centerX + 4, 50, LABEL_COLOR);
         this.pointName.render(guiGraphics, mouseX, mouseY, p_282465_);
 
         super.render(guiGraphics, mouseX, mouseY, p_282465_);

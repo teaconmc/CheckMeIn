@@ -4,5 +4,11 @@
         "sounds": [
             "check_in:shot"
         ]
+    },
+    "entity.check_in.player.check_path": {
+        "subtitle": "subtitles.check_in.entity.player.check_path",
+        "sounds": [
+            "random/orb"
+        ]
     }
 }

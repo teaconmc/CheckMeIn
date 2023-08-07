@@ -10,7 +10,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
 import org.teacon.checkin.CheckMeIn;
-import org.teacon.checkin.configs.ServerConfig;
+import org.teacon.checkin.configs.CommonConfig;
 import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.network.capability.PathPointData;
 import org.teacon.checkin.utils.MathHelper;
@@ -140,7 +140,7 @@ public class PathPlanner extends Item {
             player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set_different_dim", ordCurr), true);
         } else {
             var dist = lastPos.distManhattan(oldData.pos());
-            if (MathHelper.chebyshevDist(oldData.pos(), lastPos) <= ServerConfig.INSTANCE.pathPointCheckInRange.get() * 2)
+            if (MathHelper.chebyshevDist(oldData.pos(), lastPos) <= CommonConfig.INSTANCE.pathPointCheckInRange.get() * 2)
                 player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set_too_close", ordCurr, dist), true);
             else
                 player.sendSystemMessage(Component.translatable("item.check_in.path_planner.set", ordCurr, dist), true);

@@ -29,7 +29,7 @@ public class PathPlannerGuidePacket {
 
     public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
         var context = contextSupplier.get();
-        context.enqueueWork(() -> ClientPacketHandler.handlePathPlannerGuidePacket(this, context));
+        context.enqueueWork(() -> ClientPacketHandler.handlePathPlannerGuidePacket(this));
         context.setPacketHandled(true);
     }
 

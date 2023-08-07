@@ -21,12 +21,23 @@ public class CheckProgress {
     public static final ResourceLocation ID = new ResourceLocation(CheckMeIn.MODID, "progress");
     private static final String UNIQUE_POINTS_KEY = "UniquePoints";
     private static final String PATH_PROGRESS_KEY = "PathProgress";
+    private static final String CURRENTLY_GUIDING_KEY = "CurrentlyGuiding";
     private static final String PROGRESS_KEY = "Progress";
 
     private final Map<String, UniquePointData> uniquePoints = new HashMap<>();
     private final Map<PathPointData.TeamPathID, Short> pathProgress = new HashMap<>();
 
-    public boolean checked(UniquePointData data) {return uniquePoints.containsKey(data.teamID());}
+    private @Nullable PathPointData.TeamPathID currentlyGuiding = null;
+
+    public void setCurrentlyGuiding(@Nullable PathPointData.TeamPathID currentlyGuiding) {
+        this.currentlyGuiding = currentlyGuiding;
+    }
+
+    public @Nullable PathPointData.TeamPathID getCurrentlyGuiding() {
+        return currentlyGuiding;
+    }
+
+    public boolean isUniquePointChecked(UniquePointData data) {return uniquePoints.containsKey(data.teamID());}
 
     /**
      * Check a unique point only when it is not previously checked
@@ -46,6 +57,19 @@ public class CheckProgress {
 
     public void resetPath(String teamID, String pathID) {pathProgress.remove(new PathPointData.TeamPathID(teamID, pathID));}
 
+    public void resetAllPaths() {pathProgress.clear();}
+
+    @Nullable
+    public Short lastCheckedOrd(String teamID, String pathID) {return pathProgress.get(new PathPointData.TeamPathID(teamID, pathID));}
+
+    public void copyFrom(CheckProgress progress) {
+        this.uniquePoints.clear();
+        this.pathProgress.clear();
+        this.uniquePoints.putAll(progress.uniquePoints);
+        this.pathProgress.putAll(progress.pathProgress);
+        this.currentlyGuiding = progress.currentlyGuiding;
+    }
+
     public Collection<String> checkedUniquePointTeamIDs() {return uniquePoints.keySet();}
 
     /*                  Persistence                 */
@@ -56,6 +80,9 @@ public class CheckProgress {
             compound.putShort(PROGRESS_KEY, entry.getValue());
             return compound;
         }).collect(NbtHelper.toListTag()));
+        if (this.currentlyGuiding != null) {
+            tag.put(CURRENTLY_GUIDING_KEY, this.currentlyGuiding.writeNBT());
+        }
     }
 
     public void read(CompoundTag tag) {
@@ -73,6 +100,9 @@ public class CheckProgress {
                         this.checkPathPoint(id, ct.getShort(PROGRESS_KEY));
                 });
             }
+        }
+        if (tag.contains(CURRENTLY_GUIDING_KEY)) {
+            this.currentlyGuiding = PathPointData.TeamPathID.readNBT(tag.getCompound(CURRENTLY_GUIDING_KEY)).orElse(null);
         }
     }
 
