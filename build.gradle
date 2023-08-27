@@ -12,6 +12,7 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'maven-publish'
 }
 
 apply plugin: 'org.spongepowered.mixin'
@@ -79,10 +80,6 @@ mixin {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:flat_dir_resolver
-    // flatDir {
-    //     dir 'libs'
-    // }
 }
 
 dependencies {
@@ -103,7 +100,8 @@ tasks.named('processResources', ProcessResources).configure {
 
     filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
         expand replaceProperties + [project: project]
-    }}
+    }
+}
 
 tasks.named('jar', Jar).configure {
     manifest {
@@ -123,4 +121,51 @@ tasks.named('jar', Jar).configure {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+publish.dependsOn('reobfJar')
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = "org.teacon"
+            artifactId = "CheckIn-Forge-1.20"
+
+            artifact jar
+            pom {
+                name = 'CheckIn'
+                description = '打卡点.'
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = "teacon"
+            url = "s3://maven/"
+            credentials(AwsCredentials) {
+                accessKey = System.env.ARCHIVE_ACCESS_KEY
+                secretKey = System.env.ARCHIVE_SECRET_KEY
+            }
+        }
+    }
+}
+
+tasks.withType(PublishToMavenRepository) {
+    onlyIf {
+        System.env.ARCHIVE_ACCESS_KEY && System.env.ARCHIVE_SECRET_KEY
+    }
+}
+
+/**
+ * A simple task to pass down the artifact name and path to other GitHub actions.
+ */
+task("githubActionOutput") {
+    onlyIf {
+        System.env.GITHUB_ACTIONS
+    }
+    doLast {
+        def output = new File(System.env.GITHUB_OUTPUT)
+        def newLine = System.getProperty('line.separator')
+        output << newLine << "artifact_path=${jar.archiveFile.get().asFile.absolutePath}"
+        output << newLine << "artifact_name=${jar.archiveFileName.get()}"
+    }
 }
