@@ -1,7 +1,9 @@
 package org.teacon.checkin.server.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -9,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.server.level.ServerPlayer;
+import org.jetbrains.annotations.Nullable;
 import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.network.capability.CheckProgress;
 import org.teacon.checkin.network.capability.PathPointData;
@@ -19,8 +22,13 @@ import org.teacon.checkin.world.level.block.PointUniqueBlock;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static net.minecraft.commands.Commands.*;
 
@@ -33,9 +41,15 @@ public class CheckMeInCommand {
                                 .then(literal("point_name").executes(context -> listUniquePoints(context, UniquePointData::pointName)))
                                 .then(literal("team_id").executes(context -> listUniquePoints(context, UniquePointData::teamID))))
                         .then(literal(PointPathBlock.NAME)
-                                .then(literal("point_name").executes(context -> listPathPoints(context, PathPointData::pointName)))
+                                .then(literal("point_name")
+                                        .then(argument("point_name", StringArgumentType.string())
+                                                .executes(context -> listPathPointsGroupingByPathIdOnly(context, null, context.getArgument("point_name", String.class))))
+                                        .executes(context -> listPathPointsGroupingByPathIdOnly(context, null, null)))
                                 .then(literal("team_id").executes(context -> listPathPoints(context, PathPointData::teamID)))
-                                .then(literal("path_id").executes(context -> listPathPoints(context, PathPointData::pathID))))
+                                .then(literal("path_id")
+                                        .then(argument("path_id", StringArgumentType.string())
+                                                .executes(context -> listPathPointsGroupingByPathIdOnly(context, context.getArgument("path_id", String.class), null)))
+                                        .executes(context -> listPathPointsGroupingByPathIdOnly(context, null, null))))
                 ).then(literal("reset")
                         .then(literal(PointUniqueBlock.NAME)
                                 .then(argument("targets", EntityArgument.players())
@@ -139,27 +153,92 @@ public class CheckMeInCommand {
     }
 
     private static int listPathPoints(CommandContext<CommandSourceStack> context, Function<PathPointData, String> displayFunc) {
-        var components = new ArrayList<Component>();
+        var output = Component.literal("");
+        int totalCount = 0;
         for (var level : context.getSource().getServer().getAllLevels()) {
             var capOpt = level.getCapability(CheckInPoints.Provider.CAPABILITY).resolve();
-            capOpt.ifPresent(checkInPoints -> checkInPoints.getAllPathPoints()
-                    .stream().sorted(Comparator.comparing(displayFunc).thenComparingInt(d -> d.ord() == null ? -1 : d.ord()))
-                    .forEachOrdered(data -> components.add(Component.literal(displayFunc.apply(data)).withStyle(Style.EMPTY
-                            .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, data.toTextComponent(level)))
-                            .withClickEvent(TextComponent.teleportTo(data.pos(), level))))));
+            if (capOpt.isPresent()) {
+                var pointsByTeamId = capOpt.get().getAllPathPoints()
+                        .stream()
+                        .sorted(Comparator.comparing(displayFunc).thenComparingInt(d -> d.ord() == null ? -1 : d.ord()))
+                        .collect(Collectors.groupingBy(PathPointData::teamID));
+                for (var entry : pointsByTeamId.entrySet()) {
+                    output.append(Component.literal(entry.getKey()).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+                            .append("\n");
+                    totalCount += entry.getValue().size();
+                    var pointsByPathId = entry.getValue().stream().collect(Collectors.groupingBy(PathPointData::pathID));
+                    for (var pathEntry : pointsByPathId.entrySet()) {
+                        output.append("  - ")
+                                .append(Component.literal(pathEntry.getKey()).withStyle(ChatFormatting.GOLD))
+                                .append(": ");
+                        var points = new ArrayList<>(pathEntry.getValue());
+                        points.sort(Comparator.comparingInt(d -> d.ord() == null ? -1 : d.ord()));
+                        for (int i = 0; i < points.size(); i++) {
+                            var data = points.get(i);
+                            output.append(Component.literal(data.pointName()).withStyle(Style.EMPTY
+                                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, data.toTextComponent(level)))
+                                    .withClickEvent(TextComponent.teleportTo(data.pos(), level))));
+                            if (i < points.size() - 1) {
+                                output.append(", ");
+                            } else {
+                                output.append("\n");
+                            }
+                        }
+                    }
+
+                }
+            }
         }
-        var output = Component.literal("");
-        for (int i = 0; i < components.size(); i++) {
-            output.append(components.get(i));
-            if (i < components.size() - 1) output.append(", ");
-        }
-        if (components.isEmpty()) {
+        if (totalCount <= 0) {
             output.append(Component.translatable("commands.check_in.list.success.none", Component.translatable("block.check_in.point_path")));
         } else {
-            output.append("\n").append(Component.translatable("commands.check_in.list.success.some", components.size(), Component.translatable("block.check_in.point_path")));
+            output.append("------------\n").append(Component.translatable("commands.check_in.list.success.some", totalCount, Component.translatable("block.check_in.point_path")));
         }
 
         context.getSource().sendSuccess(() -> output, true);
-        return components.size();
+        return totalCount;
+    }
+
+    private static int listPathPointsGroupingByPathIdOnly(CommandContext<CommandSourceStack> context, @Nullable String onlyThisPathId, @Nullable String onlyThisPointName) {
+        var output = Component.literal("");
+        int totalCount = 0;
+        for (var level : context.getSource().getServer().getAllLevels()) {
+            var capOpt = level.getCapability(CheckInPoints.Provider.CAPABILITY).resolve();
+            if (capOpt.isPresent()) {
+                var pointsByPathId = capOpt.get().getAllPathPoints()
+                        .stream()
+                        .filter(p -> (onlyThisPathId == null || onlyThisPathId.equals(p.pathID())) && (onlyThisPointName == null || onlyThisPointName.equals(p.pointName())))
+                        .sorted(Comparator.comparing(PathPointData::pathID).thenComparingInt(d -> d.ord() == null ? -1 : d.ord()))
+                        .collect(Collectors.groupingBy(PathPointData::pathID));
+                for (var pathEntry : pointsByPathId.entrySet()) {
+                    totalCount += pathEntry.getValue().size();
+                    output.append("- ")
+                            .append(Component.literal(pathEntry.getKey()).withStyle(ChatFormatting.GOLD))
+                            .append(": ");
+                    var points = new ArrayList<>(pathEntry.getValue());
+                    points.sort(Comparator.comparingInt(d -> d.ord() == null ? -1 : d.ord()));
+                    for (int i = 0; i < points.size(); i++) {
+                        var data = points.get(i);
+                        output.append(Component.literal(data.pointName()).withStyle(Style.EMPTY
+                                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, data.toTextComponent(level)))
+                                .withClickEvent(TextComponent.teleportTo(data.pos(), level))));
+                        if (i < points.size() - 1) {
+                            output.append(", ");
+                        } else {
+                            output.append("\n");
+                        }
+                    }
+
+                }
+            }
+        }
+        if (totalCount <= 0) {
+            output.append(Component.translatable("commands.check_in.list.success.none", Component.translatable("block.check_in.point_path")));
+        } else {
+            output.append("------------\n").append(Component.translatable("commands.check_in.list.success.some", totalCount, Component.translatable("block.check_in.point_path")));
+        }
+
+        context.getSource().sendSuccess(() -> output, true);
+        return totalCount;
     }
 }
