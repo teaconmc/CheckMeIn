@@ -92,7 +92,7 @@ public class TickEventHandler {
                         && data.ord() != null && data.ord() > lastOrd)
                 .min(Comparator.comparing(PathPointData::ord))
                 .ifPresent(next -> {
-                    player.playNotifySound(CheckMeIn.CHECK_PATH.get(), SoundSource.PLAYERS, 0.1F, 0.9F);
+                    player.playNotifySound(CheckMeIn.CHECK_PATH.get(), SoundSource.PLAYERS, 0.25F, 0.9F);
                     assert next.ord() != null;
                     prog.checkPathPoint(next.teamPathID(), next.ord());
                 });
