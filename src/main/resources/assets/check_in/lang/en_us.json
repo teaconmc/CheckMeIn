@@ -29,6 +29,11 @@
     "container.check_in.nvg_path": "Navigator",
     "container.check_in.navigating": "Navigating",
     "container.check_in.candidates": "Candidates",
+    "container.check_in.prev_page": "Previous Page",
+    "container.check_in.next_page": "Next Page",
+    "container.check_in.tp_back": "Teleport back to last check-in point",
+    "container.check_in.clear_progress": "Clear progress for this path",
+    "container.check_in.start_guiding": "Start guiding this path",
 
     "sanitize.check_in.too_long": "%s is too long (%d > %d)",
     "sanitize.check_in.dup_team_id": "Team ID \"%s\" already has a %s at %s, click to teleport",

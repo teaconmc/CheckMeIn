@@ -41,15 +41,19 @@ public class PathNavigatorScreen extends Screen implements MenuAccess<PathNaviga
     private static final CustomButton.Factory PATHFINDING_BTN = CustomButton.FactoryBuilder.createWithTexture(TEXTURE, 0, 237, 87, 19)
             .texture(HOVER, 87, 237).texture(PRESS, 0, 237 - 19).build();
     private static final CustomButton.Factory TP_BACK_BTN = CustomButton.FactoryBuilder.createWithTexture(TEXTURE, 208, 114, 8, 9)
-            .texture(HOVER, 208, 114+9).texture(PRESS, 208, 114 + 9 * 2).build();
+            .texture(HOVER, 208, 114+9).texture(PRESS, 208, 114 + 9 * 2)
+            .tooltip(Component.translatable("container.check_in.tp_back")).build();
     private static final ProgressBar.Factory PROGRESS = ProgressBar.FactoryBuilder.createWithOverlay(TEXTURE, 208, 69, 42, 9)
             .texture(UNDERLAY, 208, 69 - 9).texture(COMPLETE, 208, 69 + 9).build();
     private static final CustomButton.Factory ERASE_BTN = CustomButton.FactoryBuilder.createWithTexture(TEXTURE, 208, 87, 8, 9)
-            .texture(HOVER, 208, 87+9).texture(PRESS, 208, 87 + 9 * 2).build();
+            .texture(HOVER, 208, 87+9).texture(PRESS, 208, 87 + 9 * 2)
+            .tooltip(Component.translatable("container.check_in.clear_progress")).build();
     private static final CustomButton.Factory BACKWARD_BTN = CustomButton.FactoryBuilder.createWithTexture(TEXTURE, 208, 0, 24, 15)
-            .texture(DISABLED, 208, 15).texture(HOVER, 208, 15 * 2).texture(PRESS, 208, 15 * 3).build();
+            .texture(DISABLED, 208, 15).texture(HOVER, 208, 15 * 2).texture(PRESS, 208, 15 * 3)
+            .tooltip(Component.translatable("container.check_in.prev_page")).build();
     private static final CustomButton.Factory FORWARD_BTN = CustomButton.FactoryBuilder.createWithTexture(TEXTURE, 208 + 24, 0, 24, 15)
-            .texture(DISABLED, 208 + 24, 15).texture(HOVER, 208 + 24, 15 * 2).texture(PRESS, 208 + 24, 15 * 3).build();
+            .texture(DISABLED, 208 + 24, 15).texture(HOVER, 208 + 24, 15 * 2).texture(PRESS, 208 + 24, 15 * 3)
+            .tooltip(Component.translatable("container.check_in.next_page")).build();
 
     private final PathNavigatorMenu menu;
     private final List<Button> tpBackButtons = new ArrayList<>(PathNavigatorMenu.PAGE_SIZE);
@@ -95,7 +99,7 @@ public class PathNavigatorScreen extends Screen implements MenuAccess<PathNaviga
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float p_282465_) {
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         this.renderBackground(guiGraphics);
 
         var centerX = this.width / 2;
@@ -106,13 +110,13 @@ public class PathNavigatorScreen extends Screen implements MenuAccess<PathNaviga
         guiGraphics.drawString(this.font, Component.translatable("container.check_in.candidates"), centerX - 89, 80, 0xffffff);
         // entries
         this.drawCurrentlyGuiding(guiGraphics);
-        this.drawEntries(guiGraphics);
+        this.drawEntries(guiGraphics, mouseX, mouseY);
         // page number
         var pageNo = formatPageNo(this.menu.getPageNo(), this.menu.getPages());
         var pageNoX = centerX + 23 - (int)(this.font.getSplitter().stringWidth(pageNo) / 2);
         guiGraphics.drawString(this.font, pageNo, pageNoX, 199, 0xffffff, false);
 
-        super.render(guiGraphics, mouseX, mouseY, p_282465_);
+        super.render(guiGraphics, mouseX, mouseY, partialTicks);
     }
 
     @Override
@@ -147,7 +151,7 @@ public class PathNavigatorScreen extends Screen implements MenuAccess<PathNaviga
         PROGRESS.draw(guiGraphics, centerX + 42, y - 1, entry.progress());
     }
 
-    private void drawEntries(GuiGraphics guiGraphics) {
+    private void drawEntries(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         var centerX = this.width / 2;
         int i = 0;
         var splitter = this.font.getSplitter();
@@ -158,6 +162,9 @@ public class PathNavigatorScreen extends Screen implements MenuAccess<PathNaviga
             if (splitter.stringWidth(name) > 60)
                 name = splitter.plainHeadByWidth(entry.pointName(), 55, Style.EMPTY) + "...";
             guiGraphics.drawString(this.font, name, centerX - 92, y, 0xffffff, false);
+            if (mouseX >= centerX - 92 && mouseX <= centerX - 22 && mouseY >= y && mouseY <= y + 10) {
+                this.setTooltipForNextRenderPass(Component.translatable("container.check_in.clear_progress"));
+            }
             // distance
             var distance = Float.isInfinite(entry.distance()) ? "∞" : Float.isNaN(entry.distance()) ? "N/A"
                     : Math.round(entry.distance() * 10) / 10f + "m";// imprecise (for large numbers) but much faster than formatting

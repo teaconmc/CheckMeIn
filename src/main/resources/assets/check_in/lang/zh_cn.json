@@ -29,6 +29,11 @@
     "container.check_in.nvg_path": "打卡点指南针",
     "container.check_in.navigating": "正在导航",
     "container.check_in.candidates": "可用导航点",
+    "container.check_in.prev_page": "上一页",
+    "container.check_in.next_page": "下一页",
+    "container.check_in.tp_back": "传送回上一次经过的打卡点",
+    "container.check_in.clear_progress": "清除该路径进度",
+    "container.check_in.start_guiding": "点击切换到该点导航",
 
     "sanitize.check_in.too_long": "%s过长（%d > %d）",
     "sanitize.check_in.dup_team_id": "队伍ID“%s”已经有了一个%s，位于%s，点击传送",

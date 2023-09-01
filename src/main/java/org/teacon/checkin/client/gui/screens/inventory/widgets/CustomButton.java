@@ -2,9 +2,11 @@ package org.teacon.checkin.client.gui.screens.inventory.widgets;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.Nullable;
 import org.teacon.checkin.utils.IntBox;
 
 import java.util.EnumMap;
@@ -13,8 +15,11 @@ import java.util.function.Supplier;
 public class CustomButton extends Button {
     protected boolean pressed;
 
-    private CustomButton(int x, int y, int width, int height, Component component, OnPress onPress, CreateNarration narration) {
+    private CustomButton(int x, int y, int width, int height, Component component, @Nullable Component tooltip, OnPress onPress, CreateNarration narration) {
         super(x, y, width, height, component, onPress, narration);
+        if (tooltip != null) {
+            this.setTooltip(Tooltip.create(tooltip));
+        }
     }
 
     public boolean isPressed() {return pressed;}
@@ -37,6 +42,8 @@ public class CustomButton extends Button {
         private final int textureWidth;
         private final int textureHeight;
         private final Map<Status, IntBox> textureMap;
+
+        private @Nullable Component tooltip = null;
 
         private FactoryBuilder(ResourceLocation texture, int textureWidth, int textureHeight, int x, int y, int width, int height) {
             this.texture = texture;
@@ -64,6 +71,11 @@ public class CustomButton extends Button {
             return this;
         }
 
+        public FactoryBuilder tooltip(Component tooltip) {
+            this.tooltip = tooltip;
+            return this;
+        }
+
         public Factory build() {
             final IntBox normal = this.textureMap.get(Status.NORMAL);
             final IntBox hover = this.textureMap.getOrDefault(Status.HOVER, normal);
@@ -71,7 +83,7 @@ public class CustomButton extends Button {
             final IntBox press = this.textureMap.getOrDefault(Status.PRESS, focus);
             final IntBox disabled = this.textureMap.getOrDefault(Status.DISABLED, normal);
 
-            return (x, y, component, onPress) -> new CustomButton(x, y, normal.width(), normal.height(), component, onPress, Supplier::get) {
+            return (x, y, component, onPress) -> new CustomButton(x, y, normal.width(), normal.height(), component, this.tooltip, onPress, Supplier::get) {
                 @Override
                 protected void renderWidget(GuiGraphics guiGraphics, int p_282682_, int p_281714_, float p_282542_) {
                     IntBox box = normal;
