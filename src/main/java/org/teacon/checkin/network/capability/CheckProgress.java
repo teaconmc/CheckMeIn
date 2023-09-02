@@ -29,6 +29,8 @@ public class CheckProgress {
 
     private @Nullable PathPointData.TeamPathID currentlyGuiding = null;
 
+    private @Nullable PathPointData nextPoint = null;
+
     public void setCurrentlyGuiding(@Nullable PathPointData.TeamPathID currentlyGuiding) {
         this.currentlyGuiding = currentlyGuiding;
     }
@@ -108,6 +110,20 @@ public class CheckProgress {
 
     public static LazyOptional<CheckProgress> of(ServerPlayer player) {
         return player.getCapability(Provider.CAPABILITY);
+    }
+
+    public @Nullable PathPointData getNextPoint() {
+        return this.nextPoint;
+    }
+
+    /**
+     * @param incomingNextPoint Updated next point to guide
+     * @return Old next point to guide, or null if wasn't guiding to any point.
+     */
+    public @Nullable PathPointData updateNextPoint(@Nullable PathPointData incomingNextPoint) {
+        var prev = this.nextPoint;
+        this.nextPoint = incomingNextPoint;
+        return prev;
     }
 
     public static class Provider implements ICapabilitySerializable<CompoundTag> {

@@ -8,6 +8,7 @@ import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.commands.synchronization.ArgumentTypeInfos;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -49,6 +50,7 @@ import org.teacon.checkin.configs.CommonConfig;
 import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.network.capability.CheckProgress;
 import org.teacon.checkin.network.capability.GuidingManager;
+import org.teacon.checkin.network.capability.PathPointData;
 import org.teacon.checkin.network.protocol.game.*;
 import org.teacon.checkin.server.commands.CheckMeInCommand;
 import org.teacon.checkin.server.commands.PointPathArgument;
@@ -189,6 +191,7 @@ public class CheckMeIn {
             CHANNEL.registerMessage(packId.nextInt(), PathNaviTpBackPacket.class, PathNaviTpBackPacket::write, PathNaviTpBackPacket::new, PathNaviTpBackPacket::handle);
             CHANNEL.registerMessage(packId.nextInt(), PathNaviErasePacket.class, PathNaviErasePacket::write, PathNaviErasePacket::new, PathNaviErasePacket::handle);
             CHANNEL.registerMessage(packId.nextInt(), PathNaviSetGuidingPathPacket.class, PathNaviSetGuidingPathPacket::write, PathNaviSetGuidingPathPacket::new, PathNaviSetGuidingPathPacket::handle);
+            CHANNEL.registerMessage(packId.nextInt(), SyncCheckProgressPacket.class, SyncCheckProgressPacket::write, SyncCheckProgressPacket::new, SyncCheckProgressPacket::handle);
         }
     }
 
@@ -199,7 +202,14 @@ public class CheckMeIn {
             event.enqueueWork(() -> {
                 // FIXME: server should send client the globalpos of the next point in the path
                 ItemProperties.register(NVG_PATH.get(), new ResourceLocation("angle"), new CompassItemPropertyFunction(
-                        (level, itemStack, entity) -> null));
+                        (level, itemStack, entity) -> {
+                            var location = entity.getCapability(CheckProgress.Provider.CAPABILITY)
+                                    .resolve()
+                                    .map(CheckProgress::getNextPoint)
+                                    .map(PathPointData::pos)
+                                    .orElse(null);
+                            return location != null ? GlobalPos.of(level.dimension(), location) : null;
+                        }));
 
                 MenuScreens.register(POINT_UNIQUE_MENU.get(), PointUniqueScreen::new);
                 MenuScreens.register(POINT_PATH_MENU.get(), PointPathScreen::new);

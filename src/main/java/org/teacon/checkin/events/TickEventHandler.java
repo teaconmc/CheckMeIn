@@ -8,6 +8,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.network.PacketDistributor;
 import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.configs.CommonConfig;
 import org.teacon.checkin.network.capability.CheckInPoints;
@@ -15,6 +16,7 @@ import org.teacon.checkin.network.capability.CheckProgress;
 import org.teacon.checkin.network.capability.GuidingManager;
 import org.teacon.checkin.network.capability.PathPointData;
 import org.teacon.checkin.network.protocol.game.PathPlannerGuidePacket;
+import org.teacon.checkin.network.protocol.game.SyncCheckProgressPacket;
 import org.teacon.checkin.utils.MathHelper;
 import org.teacon.checkin.world.item.PathPlanner;
 import org.teacon.checkin.world.level.block.entity.PointPathBlockEntity;
@@ -96,6 +98,26 @@ public class TickEventHandler {
                     assert next.ord() != null;
                     prog.checkPathPoint(next.teamPathID(), next.ord());
                 });
+
+        var maybeLastPointOrd = prog.lastCheckedOrd(teamID, pathID);
+        if (maybeLastPointOrd != null) {
+            var nextPoint = points.getPathPoint(teamID, pathID, (short) (maybeLastPointOrd + 1));
+            var prev = prog.updateNextPoint(nextPoint);
+            if (prev != nextPoint) {
+                CheckMeIn.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new SyncCheckProgressPacket(prog));
+            }
+        } else {
+            var nextPoint = points.nonnullOrdPathPoints(teamID, pathID)
+                    .stream()
+                    .min(Comparator.comparing(p -> p.ord() == null ? -1 : p.ord()))
+                    .orElse(null);
+            if (nextPoint != null) {
+                var prev = prog.updateNextPoint(nextPoint);
+                if (prev != nextPoint) {
+                    CheckMeIn.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new SyncCheckProgressPacket(prog));
+                }
+            }
+        }
 
     }
 }
