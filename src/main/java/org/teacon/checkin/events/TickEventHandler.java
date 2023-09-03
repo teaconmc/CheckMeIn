@@ -91,8 +91,8 @@ public class TickEventHandler {
                 .map(entry -> points.getPathPoint(entry.getKey()))
                 .filter(data -> data != null && MathHelper.chebyshevDist(data.pos(), playerPos) <= r
                         && data.teamID().equals(teamID) && data.pathID().equals(pathID)
-                        && data.ord() != null && data.ord() > lastOrd)
-                .min(Comparator.comparing(PathPointData::ord))
+                        && data.ord() != null && (lastOrd == -1 ? data.ord() == 0 || data.ord() == 1 : data.ord() == lastOrd + 1)) // TODO 允许不连续的路径点 ord。举例：只存在 1, 2, 4, 8，当已在 1 和 2 签到时，不能在 8 签到，必须先在 4 签到。
+                .findFirst()
                 .ifPresent(next -> {
                     player.playNotifySound(CheckMeIn.CHECK_PATH.get(), SoundSource.PLAYERS, 0.25F, 0.9F);
                     assert next.ord() != null;
