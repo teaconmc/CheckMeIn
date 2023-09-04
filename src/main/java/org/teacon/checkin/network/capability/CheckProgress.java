@@ -25,12 +25,17 @@ public class CheckProgress {
     private static final String PROGRESS_KEY = "Progress";
 
     private final Map<String, UniquePointData> uniquePoints = new HashMap<>();
-    private final Map<PathPointData.TeamPathID, Short> pathProgress = new HashMap<>();
 
+    private final Map<PathPointData.TeamPathID, Short> pathProgress = new HashMap<>();
     private @Nullable PathPointData.TeamPathID currentlyGuiding = null;
+    /**
+     * should be set to true whenever currentlyGuiding or pathProgress is updated
+     */
+    private boolean needSyncPathProgress = false;
 
     public void setCurrentlyGuiding(@Nullable PathPointData.TeamPathID currentlyGuiding) {
         this.currentlyGuiding = currentlyGuiding;
+        this.needSyncPathProgress = true;
     }
 
     public @Nullable PathPointData.TeamPathID getCurrentlyGuiding() {
@@ -49,15 +54,24 @@ public class CheckProgress {
     /**
      * Advance the check-in progress
      */
-    public void checkPathPoint(PathPointData.TeamPathID id, short ord) {pathProgress.compute(id, (k, v) -> v == null || v < ord ? ord : v);}
+    public void checkPathPoint(PathPointData.TeamPathID id, short ord) {
+        pathProgress.compute(id, (k, v) -> v == null || v < ord ? ord : v);
+        this.needSyncPathProgress = true;
+    }
 
     public void resetUniquePoint(String teamID) {uniquePoints.remove(teamID);}
 
     public void resetAllUniquePoints() {uniquePoints.clear();}
 
-    public void resetPath(String teamID, String pathID) {pathProgress.remove(new PathPointData.TeamPathID(teamID, pathID));}
+    public void resetPath(String teamID, String pathID) {
+        pathProgress.remove(new PathPointData.TeamPathID(teamID, pathID));
+        this.needSyncPathProgress = true;
+    }
 
-    public void resetAllPaths() {pathProgress.clear();}
+    public void resetAllPaths() {
+        pathProgress.clear();
+        this.needSyncPathProgress = true;
+    }
 
     @Nullable
     public Short lastCheckedOrd(String teamID, String pathID) {return pathProgress.get(new PathPointData.TeamPathID(teamID, pathID));}
@@ -71,6 +85,10 @@ public class CheckProgress {
     }
 
     public Collection<String> checkedUniquePointTeamIDs() {return uniquePoints.keySet();}
+
+    public boolean isNeedSyncPathProgress() {return needSyncPathProgress;}
+
+    public void setNeedSyncPathProgress(boolean needSyncPathProgress) {this.needSyncPathProgress = needSyncPathProgress;}
 
     /*                  Persistence                 */
     public void write(CompoundTag tag) {
@@ -106,6 +124,7 @@ public class CheckProgress {
         }
     }
 
+    /*                  Utilities                 */
     public static LazyOptional<CheckProgress> of(ServerPlayer player) {
         return player.getCapability(Provider.CAPABILITY);
     }
@@ -130,7 +149,7 @@ public class CheckProgress {
                 level = lvl;
             }
         }
-        return Pair.of(level, next);
+        return next == null ? null : Pair.of(level, next);
     }
 
     public static class Provider implements ICapabilitySerializable<CompoundTag> {

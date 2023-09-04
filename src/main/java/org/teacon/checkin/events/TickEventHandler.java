@@ -20,8 +20,10 @@ import org.teacon.checkin.network.protocol.game.SyncNextNavPointPacket;
 import org.teacon.checkin.utils.MathHelper;
 import org.teacon.checkin.world.item.PathPlanner;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Objects;
+import java.util.Optional;
 
 @Mod.EventBusSubscriber(modid = CheckMeIn.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TickEventHandler {
@@ -29,15 +31,20 @@ public class TickEventHandler {
     public static void handleLevelTickEvent(TickEvent.LevelTickEvent event) {
         var level = event.level;
         if (event.phase == TickEvent.Phase.END) {
-            for (var player : level.players()) syncPathPlannerGuidingPoints(player);
-
-            CheckInPoints.of(level).ifPresent(points -> points.pathsNeedSync().clear());
+            var resetFlagCallbacks = new ArrayList<Runnable>();
+            for (var player : level.players()) {
+                // flags should be reset in callback functions to prevent interfering following syncing functions
+                resetFlagCallbacks.add(syncPathPlannerGuidingPoints(player));
+                resetFlagCallbacks.add(syncPathNavGuidingPoints(player));
+            }
+            resetFlagCallbacks.forEach(Runnable::run);
 
             for (var player : level.players()) checkNearbyPathPoint(player);
         }
     }
 
-    private static void syncPathPlannerGuidingPoints(Player player) {
+    private static Runnable syncPathPlannerGuidingPoints(Player player) {
+        var callbackHolder = new Runnable[]{() -> {}};
         if (player instanceof ServerPlayer serverPlayer && player.getMainHandItem().is(CheckMeIn.PATH_PLANNER.get())) {
             var compoundTag = player.getMainHandItem().getOrCreateTagElement(PathPlanner.PLANNER_PROPERTY_KEY);
             var teamID = compoundTag.getString(PathPlanner.TEAM_ID_KEY);
@@ -51,12 +58,39 @@ public class TickEventHandler {
                             .sorted(Comparator.comparing(data -> Objects.requireNonNull(data.ord())))
                             .map(PathPointData::pos)
                             .toList();
-                    guiding.serverFace.setPathPlannerFocusID(id);
-                    guiding.serverFace.setDimension(dim);
                     new PathPlannerGuidePacket(path).send(serverPlayer);
+                    callbackHolder[0] = () -> {
+                        guiding.serverFace.setPathPlannerFocusID(id);
+                        guiding.serverFace.setDimension(dim);
+                        points.pathsNeedSync().clear();
+                    };
                 }
             }));
         }
+        return callbackHolder[0];
+    }
+
+    private static Runnable syncPathNavGuidingPoints(Player player) {
+        var callbackHolder = new Runnable[]{() -> {}};
+        if (player instanceof ServerPlayer serverPlayer) {
+            CheckInPoints.of(serverPlayer.serverLevel()).ifPresent(points -> CheckProgress.of(serverPlayer).ifPresent(progress -> GuidingManager.of(serverPlayer).ifPresent(guiding -> {
+                var id = progress.getCurrentlyGuiding();
+                var dim = player.level().dimension();
+                if (progress.isNeedSyncPathProgress() || points.pathsNeedSync().contains(id) || !dim.equals(guiding.serverFace.getDimension())) {
+                    var nextGlobal = Optional.ofNullable(progress.getCurrentlyGuiding())
+                            .map($ -> CheckProgress.nextPointOnPath(serverPlayer, $.teamID(), $.pathID()))
+                            .map($ -> GlobalPos.of($.getLeft().dimension(), $.getRight().pos()))
+                            .orElse(null);
+                    CheckMeIn.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new SyncNextNavPointPacket(nextGlobal));
+                    callbackHolder[0] = () -> {
+                        guiding.serverFace.setDimension(dim);
+                        progress.setNeedSyncPathProgress(false);
+                        points.pathsNeedSync().clear();
+                    };
+                }
+            })));
+        }
+        return callbackHolder[0];
     }
 
     /**
@@ -87,13 +121,5 @@ public class TickEventHandler {
                 prog.checkPathPoint(nextPoint.teamPathID(), nextPoint.ord());
             }
         }
-
-        GuidingManager.of(serverPlayer).ifPresent(guiding -> {
-            var nextGlobal = nextOnPath == null ? null : GlobalPos.of(nextOnPath.getLeft().dimension(), nextOnPath.getRight().pos());
-            if (!Objects.equals(guiding.serverFace.getPathNavNextPoint(), nextGlobal)) {
-                guiding.serverFace.setPathNavNextPoint(nextGlobal);
-                CheckMeIn.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new SyncNextNavPointPacket(nextGlobal));
-            }
-        });
     }
 }

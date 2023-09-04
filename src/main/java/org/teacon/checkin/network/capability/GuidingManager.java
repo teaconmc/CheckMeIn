@@ -16,6 +16,11 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class is for syncing non-persistent data from server to client.
+ * <p>
+ * The data should only be used for rendering purpose, and should not be involved in business logic
+ */
 @AutoRegisterCapability
 public class GuidingManager {
     public static final ResourceLocation ID = new ResourceLocation(CheckMeIn.MODID, "guiding_render");
