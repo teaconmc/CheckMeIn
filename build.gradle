@@ -17,8 +17,8 @@ plugins {
 
 apply plugin: 'org.spongepowered.mixin'
 
-group = mod_version
-version = mod_group_id
+group = mod_group_id
+version = mod_version
 
 base {
     archivesName = mod_id
@@ -150,9 +150,9 @@ publishing {
 }
 
 tasks.withType(PublishToMavenRepository) {
-    onlyIf {
+    /*onlyIf {
         System.env.ARCHIVE_ACCESS_KEY && System.env.ARCHIVE_SECRET_KEY
-    }
+    }*/
 }
 
 /**
