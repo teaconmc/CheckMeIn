@@ -3,17 +3,17 @@ package org.teacon.checkin.network.capability;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.common.capabilities.*;
 import net.minecraftforge.common.util.LazyOptional;
+import org.apache.commons.lang3.tuple.Pair;
 import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.utils.NbtHelper;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @AutoRegisterCapability
 public class CheckProgress {
@@ -28,8 +28,6 @@ public class CheckProgress {
     private final Map<PathPointData.TeamPathID, Short> pathProgress = new HashMap<>();
 
     private @Nullable PathPointData.TeamPathID currentlyGuiding = null;
-
-    private @Nullable PathPointData nextPoint = null;
 
     public void setCurrentlyGuiding(@Nullable PathPointData.TeamPathID currentlyGuiding) {
         this.currentlyGuiding = currentlyGuiding;
@@ -112,18 +110,27 @@ public class CheckProgress {
         return player.getCapability(Provider.CAPABILITY);
     }
 
-    public @Nullable PathPointData getNextPoint() {
-        return this.nextPoint;
-    }
+    @Nullable
+    public static Pair<ServerLevel, PathPointData> nextPointOnPath(ServerPlayer player, String teamID, String pathID) {
+        var progOpt = CheckProgress.of(player).resolve();
+        if (progOpt.isEmpty()) return null;
+        var lastOrd = progOpt.get().lastCheckedOrd(teamID, pathID);
+        if (lastOrd == null) lastOrd = -1;
 
-    /**
-     * @param incomingNextPoint Updated next point to guide
-     * @return Old next point to guide, or null if wasn't guiding to any point.
-     */
-    public @Nullable PathPointData updateNextPoint(@Nullable PathPointData incomingNextPoint) {
-        var prev = this.nextPoint;
-        this.nextPoint = incomingNextPoint;
-        return prev;
+        ServerLevel level = null;
+        PathPointData next = null;
+        for (var lvl : player.server.getAllLevels()) {
+            var pointsOpt = CheckInPoints.of(lvl).resolve();
+            if (pointsOpt.isEmpty()) continue;
+
+            var tmp = pointsOpt.get().getNextPathPoint(teamID, pathID, lastOrd);
+            assert tmp == null || tmp.ord() != null;
+            if (tmp != null && (next == null || next.ord() > tmp.ord())) {
+                next = tmp;
+                level = lvl;
+            }
+        }
+        return Pair.of(level, next);
     }
 
     public static class Provider implements ICapabilitySerializable<CompoundTag> {

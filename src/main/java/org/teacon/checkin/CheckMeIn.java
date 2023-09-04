@@ -8,7 +8,6 @@ import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.commands.synchronization.ArgumentTypeInfos;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -16,7 +15,10 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.*;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -50,7 +52,6 @@ import org.teacon.checkin.configs.CommonConfig;
 import org.teacon.checkin.network.capability.CheckInPoints;
 import org.teacon.checkin.network.capability.CheckProgress;
 import org.teacon.checkin.network.capability.GuidingManager;
-import org.teacon.checkin.network.capability.PathPointData;
 import org.teacon.checkin.network.protocol.game.*;
 import org.teacon.checkin.server.commands.CheckMeInCommand;
 import org.teacon.checkin.server.commands.PointPathArgument;
@@ -191,7 +192,7 @@ public class CheckMeIn {
             CHANNEL.registerMessage(packId.nextInt(), PathNaviTpBackPacket.class, PathNaviTpBackPacket::write, PathNaviTpBackPacket::new, PathNaviTpBackPacket::handle);
             CHANNEL.registerMessage(packId.nextInt(), PathNaviErasePacket.class, PathNaviErasePacket::write, PathNaviErasePacket::new, PathNaviErasePacket::handle);
             CHANNEL.registerMessage(packId.nextInt(), PathNaviSetGuidingPathPacket.class, PathNaviSetGuidingPathPacket::write, PathNaviSetGuidingPathPacket::new, PathNaviSetGuidingPathPacket::handle);
-            CHANNEL.registerMessage(packId.nextInt(), SyncCheckProgressPacket.class, SyncCheckProgressPacket::write, SyncCheckProgressPacket::new, SyncCheckProgressPacket::handle);
+            CHANNEL.registerMessage(packId.nextInt(), SyncNextNavPointPacket.class, SyncNextNavPointPacket::write, SyncNextNavPointPacket::new, SyncNextNavPointPacket::handle);
         }
     }
 
@@ -200,16 +201,10 @@ public class CheckMeIn {
         @SubscribeEvent
         public static void clientSetup(FMLClientSetupEvent event) {
             event.enqueueWork(() -> {
-                // FIXME: server should send client the globalpos of the next point in the path
                 ItemProperties.register(NVG_PATH.get(), new ResourceLocation("angle"), new CompassItemPropertyFunction(
-                        (level, itemStack, entity) -> {
-                            var location = entity.getCapability(CheckProgress.Provider.CAPABILITY)
-                                    .resolve()
-                                    .map(CheckProgress::getNextPoint)
-                                    .map(PathPointData::pos)
-                                    .orElse(null);
-                            return location != null ? GlobalPos.of(level.dimension(), location) : null;
-                        }));
+                        (level, itemStack, entity) -> entity.getCapability(GuidingManager.Provider.CAPABILITY).resolve()
+                                .map(guiding -> guiding.clientFace.getPathNavNextPoint())
+                                .orElse(null)));
 
                 MenuScreens.register(POINT_UNIQUE_MENU.get(), PointUniqueScreen::new);
                 MenuScreens.register(POINT_PATH_MENU.get(), PointPathScreen::new);

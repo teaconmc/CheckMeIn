@@ -66,6 +66,18 @@ public class CheckInPoints {
         return ordMap == null ? null : ordMap.get(ord);
     }
 
+    /**
+     * Provides the next PathPoint after ord.
+     * <p>
+     * If ord is negative, then the first available ord is returned;
+     * if the path does not exist, or the ord is the last one, null is returned.
+     */
+    @Nullable
+    public PathPointData getNextPathPoint(String teamID, String pathID, short ord) {
+        var ordMap = this.teamPathIDPathPointMap.get(new PathPointData.TeamPathID(teamID, pathID));
+        return ordMap == null ? null : ordMap.getNext(ord);
+    }
+
     public Collection<PathPointData> nonnullOrdPathPoints(String teamID, String pathID) {
         var ordMap = this.teamPathIDPathPointMap.get(new PathPointData.TeamPathID(teamID, pathID));
         return ordMap == null ? List.of() : ordMap.nonnullOrdValues();
@@ -144,11 +156,11 @@ public class CheckInPoints {
     }
 
     public static class NullableOrdMap {
-        private final Map<Short, PathPointData> ordMap;
+        private final NavigableMap<Short, PathPointData> ordMap;
 //        private final Set<PathPointData> nullOrdMap;
 
         public NullableOrdMap() {
-            this.ordMap = new HashMap<>();
+            this.ordMap = new TreeMap<>();
 //            this.nullOrdMap = new HashSet<>();
         }
 
@@ -164,6 +176,12 @@ public class CheckInPoints {
 
         @Nullable
         public PathPointData get(short ord) {return ordMap.get(ord);}
+
+        @Nullable
+        public PathPointData getNext(short ord) {
+            var entry = ordMap.higherEntry(ord);
+            return entry == null ? null : entry.getValue();
+        }
 
         public Collection<PathPointData> nonnullOrdValues() {return ordMap.values();}
     }
