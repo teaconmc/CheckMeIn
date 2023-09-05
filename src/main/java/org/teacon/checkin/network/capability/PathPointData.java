@@ -70,18 +70,6 @@ public record PathPointData(BlockPos pos, String teamID, String pointName, Strin
         if (this.ord != null) buf.writeShort(this.ord);
     }
 
-    /**
-     * Variant of {@link #writeToBuf(FriendlyByteBuf)} for using in conjunction with
-     * {@link FriendlyByteBuf#writeNullable(Object, FriendlyByteBuf.Writer)}.
-     * @param buf Byte buffer
-     * @param data Data to write
-     * @return The buffer parameter itself
-     */
-    public static FriendlyByteBuf writeToBuf1(FriendlyByteBuf buf, PathPointData data) {
-        data.writeToBuf(buf);
-        return buf;
-    }
-
     public static PathPointData readFromBuf(FriendlyByteBuf buf) {
         return new PathPointData(buf.readBlockPos(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.isReadable() ? buf.readShort() : null);
     }

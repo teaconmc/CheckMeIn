@@ -162,7 +162,7 @@ public class PathNavigatorScreen extends Screen implements MenuAccess<PathNaviga
             if (splitter.stringWidth(name) > 60)
                 name = splitter.plainHeadByWidth(entry.pointName(), 55, Style.EMPTY) + "...";
             guiGraphics.drawString(this.font, name, centerX - 92, y, 0xffffff, false);
-            if (mouseX >= centerX - 92 && mouseX <= centerX - 22 && mouseY >= y && mouseY <= y + 10) {
+            if (mouseX >= centerX - 92 && mouseX <= centerX - 32 && mouseY >= y-5 && mouseY <= y + 11) {
                 this.setTooltipForNextRenderPass(Component.translatable("container.check_in.start_guiding"));
             }
             // distance
