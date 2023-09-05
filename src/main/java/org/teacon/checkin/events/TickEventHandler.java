@@ -34,6 +34,7 @@ public class TickEventHandler {
             var resetFlagCallbacks = new ArrayList<Runnable>();
             for (var player : level.players()) {
                 // flags should be reset in callback functions to prevent interfering following syncing functions
+                // flags are reset after each tick, so everything sync-able should always be synced
                 resetFlagCallbacks.add(syncPathPlannerGuidingPoints(player));
                 resetFlagCallbacks.add(syncPathNavGuidingPoints(player));
             }
@@ -45,7 +46,8 @@ public class TickEventHandler {
 
     private static Runnable syncPathPlannerGuidingPoints(Player player) {
         var callbackHolder = new Runnable[]{() -> {}};
-        if (player instanceof ServerPlayer serverPlayer && player.getMainHandItem().is(CheckMeIn.PATH_PLANNER.get())) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            // when the item is not a PathPlanner, the ids will be empty strings, and a path of length 0 will be synced
             var compoundTag = player.getMainHandItem().getOrCreateTagElement(PathPlanner.PLANNER_PROPERTY_KEY);
             var teamID = compoundTag.getString(PathPlanner.TEAM_ID_KEY);
             var pathID = compoundTag.getString(PathPlanner.PATH_ID_KEY);
