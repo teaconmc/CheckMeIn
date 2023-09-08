@@ -2,6 +2,7 @@ package org.teacon.checkin.events;
 
 
 import net.minecraft.core.GlobalPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
@@ -48,7 +49,9 @@ public class TickEventHandler {
         var callbackHolder = new Runnable[]{() -> {}};
         if (player instanceof ServerPlayer serverPlayer) {
             // when the item is not a PathPlanner, the ids will be empty strings, and a path of length 0 will be synced
-            var compoundTag = player.getMainHandItem().getOrCreateTagElement(PathPlanner.PLANNER_PROPERTY_KEY);
+            var compoundTag = player.getMainHandItem().is(CheckMeIn.PATH_PLANNER.get())
+                    ? player.getMainHandItem().getOrCreateTagElement(PathPlanner.PLANNER_PROPERTY_KEY)
+                    : new CompoundTag();
             var teamID = compoundTag.getString(PathPlanner.TEAM_ID_KEY);
             var pathID = compoundTag.getString(PathPlanner.PATH_ID_KEY);
             var id = new PathPointData.TeamPathID(teamID, pathID);
