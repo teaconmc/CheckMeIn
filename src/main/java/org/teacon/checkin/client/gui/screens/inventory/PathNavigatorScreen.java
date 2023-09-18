@@ -75,10 +75,8 @@ public class PathNavigatorScreen extends Screen implements MenuAccess<PathNaviga
 
         this.addPageWidgets();
 
-        var backwardBtn = this.addRenderableWidget(BACKWARD_BTN.create(centerX + 43, 194, btn -> this.flipPage(false)));
-        backwardBtn.active = this.menu.getPageNo() > 0;
-        var forwardBtn = this.addRenderableWidget(FORWARD_BTN.create(centerX + 43 + 26, 194, btn -> this.flipPage(true)));
-        forwardBtn.active = this.menu.getPageNo() < this.menu.getPages() - 1;
+        this.addRenderableWidget(BACKWARD_BTN.create(centerX + 43, 194, btn -> this.flipPage(false)));
+        this.addRenderableWidget(FORWARD_BTN.create(centerX + 43 + 26, 194, btn -> this.flipPage(true)));
     }
 
     @Override
@@ -112,7 +110,7 @@ public class PathNavigatorScreen extends Screen implements MenuAccess<PathNaviga
         this.drawCurrentlyGuiding(guiGraphics);
         this.drawEntries(guiGraphics, mouseX, mouseY);
         // page number
-        var pageNo = formatPageNo(this.menu.getPageNo(), this.menu.getPages());
+        var pageNo = formatPageNo(this.menu.getPageNo() + 1, this.menu.getPages());
         var pageNoX = centerX + 23 - (int)(this.font.getSplitter().stringWidth(pageNo) / 2);
         guiGraphics.drawString(this.font, pageNo, pageNoX, 199, 0xffffff, false);
 

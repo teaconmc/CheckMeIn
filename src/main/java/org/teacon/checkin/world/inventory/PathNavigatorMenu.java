@@ -92,9 +92,12 @@ public class PathNavigatorMenu extends AbstractContainerMenu {
     }
 
     public void flipPage(boolean forward) {
-        this.pageNo = forward ? Math.min(pages.length - 1, pageNo + 1) : Math.max(0, pageNo - 1);
-        var pages = this.currentPageEntries();
-        if (this.isClient && pages.length == 0) new PathNaviPageRequestPacket(pageNo).send();
+        this.pageNo += forward ? 1 : -1;
+        if (this.pageNo < 0) this.pageNo += pages.length;
+        this.pageNo %= pages.length;
+        if (this.isClient && this.currentPageEntries().length == 0) {
+            new PathNaviPageRequestPacket(pageNo).send();
+        }
     }
 
     public int getPages() {return pages.length;}
