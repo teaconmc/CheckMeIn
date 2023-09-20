@@ -1,5 +1,19 @@
-build
-.gradle
+# freedesktop
+.directory
+
+# Eclipse
+.classpath
+.factorypath
+.settings
+.project
+bin
+
+# Intellij IDEA
 .idea
+
+# Gradle
+.gradle
+
+build
 run
 run-data
