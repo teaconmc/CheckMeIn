@@ -72,21 +72,24 @@ public class PointPathBlock extends AbstractCheckPointBlock {
             var player = Minecraft.getInstance().player;
             if (player == null) return;
             if (!ClientConfig.INSTANCE.pathNaviAlwaysSuggest.get() && !player.isHolding(CheckMeIn.NVG_PATH.get())) return;
+            pos = pos.immutable();
             var globalPos = GlobalPos.of(level.dimension(), pos);
             if (!GuidingManager.of(player).resolve().map(manager -> globalPos.equals(manager.clientFace.getPathNavNextPoint())).orElse(false))
                 return;
-            if (!Vec3.atCenterOf(pos).closerThan(player.position(), ClientConfig.INSTANCE.pathNaviRenderDistance.get()))
+            if (!Vec3.atCenterOf(pos).closerThan(player.position(), ClientConfig.INSTANCE.checkPointSuggestDistance.get()))
                 return;
-            final float d = 1f / 4f;
-            final double x = pos.getCenter().x(), y = pos.getCenter().y(), z = pos.getCenter().z(), r = CommonConfig.INSTANCE.pathPointCheckInRange.get() + 0.5;
-            for (var dx = -r; dx <= r; dx += d) {
-                level.addParticle(new DustParticleOptions(CYAN_COLOR, 1F), x + dx, y, z + r, 0.0, 0.0, 0.0);
-                level.addParticle(new DustParticleOptions(CYAN_COLOR, 1F), x + dx, y, z - r, 0.0, 0.0, 0.0);
-            }
-            for (var dz = -r; dz <= r; dz += d) {
-                level.addParticle(new DustParticleOptions(CYAN_COLOR, 1F), x + r, y, z + dz, 0.0, 0.0, 0.0);
-                level.addParticle(new DustParticleOptions(CYAN_COLOR, 1F), x - r, y, z - dz, 0.0, 0.0, 0.0);
-            }
+            drawParticles(level, pos.getCenter(), CommonConfig.INSTANCE.pathPointCheckInRange.get() + 0.5, CYAN_COLOR, 0.25f);
+        }
+    }
+
+    public static void drawParticles(Level level, Vec3 pos, double r, Vector3f color, float d) {
+        for (var dx = -r; dx <= r; dx += d) {
+            level.addParticle(new DustParticleOptions(color, 1F), pos.x + dx, pos.y, pos.z + r, 0.0, 0.0, 0.0);
+            level.addParticle(new DustParticleOptions(color, 1F), pos.x + dx, pos.y, pos.z - r, 0.0, 0.0, 0.0);
+        }
+        for (var dz = -r; dz <= r; dz += d) {
+            level.addParticle(new DustParticleOptions(color, 1F), pos.x + r, pos.y, pos.z + dz, 0.0, 0.0, 0.0);
+            level.addParticle(new DustParticleOptions(color, 1F), pos.x - r, pos.y, pos.z - dz, 0.0, 0.0, 0.0);
         }
     }
 }

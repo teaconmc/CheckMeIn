@@ -59,9 +59,11 @@
     "argument.check_in.point_path.not_complete": "不完整（应有队伍ID和路径ID）",
     "argument.check_in.point_path.not_found": "未知的队伍ID：%s和路径ID：%s",
 
-    "configs.check_in.check_point_render_distance": "打卡点渲染距离",
     "configs.check_in.point_unique_check_range": "拍照打卡点打卡半径",
     "configs.check_in.point_path_check_range": "路径打卡点打卡半径",
+
+    "configs.check_in.check_point_render_distance": "打卡点渲染距离",
+    "configs.check_in.check_point_suggest_distance": "打卡点提示距离",
     "configs.check_in.path_navi_always_suggest": "总是显示打卡点指南针提示",
 
     "subtitles.check_in.item.checker.shot": "拍立得：拍摄",

@@ -36,6 +36,9 @@ public class GuidingManager {
         @Nullable
         private GlobalPos pathNavNextPoint = null;
 
+        @Nullable
+        private GlobalPos nearbyUniquePoint = null;
+
         public List<BlockPos> getPathPlannerPoints() {return pathPlannerPoints;}
 
         public void setPathPlannerPoints(List<BlockPos> pathPlannerPoints) {
@@ -47,6 +50,11 @@ public class GuidingManager {
         public GlobalPos getPathNavNextPoint() {return pathNavNextPoint;}
 
         public void setPathNavNextPoint(@Nullable GlobalPos pathNavNextPoint) {this.pathNavNextPoint = pathNavNextPoint;}
+
+        @Nullable
+        public GlobalPos getNearbyUniquePoint() {return nearbyUniquePoint;}
+
+        public void setNearbyUniquePoint(@Nullable GlobalPos nearbyUniquePoint) {this.nearbyUniquePoint = nearbyUniquePoint;}
     }
 
     public static class ServerFace {
