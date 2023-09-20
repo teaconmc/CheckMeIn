@@ -62,6 +62,7 @@
     "configs.check_in.check_point_render_distance": "打卡点渲染距离",
     "configs.check_in.point_unique_check_range": "拍照打卡点打卡半径",
     "configs.check_in.point_path_check_range": "路径打卡点打卡半径",
+    "configs.check_in.path_navi_always_suggest": "总是显示打卡点指南针提示",
 
     "subtitles.check_in.item.checker.shot": "拍立得：拍摄",
     "subtitles.check_in.entity.player.check_path": "玩家：路径打卡"

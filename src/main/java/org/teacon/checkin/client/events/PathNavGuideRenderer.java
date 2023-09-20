@@ -32,7 +32,7 @@ public class PathNavGuideRenderer {
         if (mc.player == null) return;
         var player = mc.player;
         var level = player.level();
-        if (!ClientConfig.INSTANCE.pathNaviArrowAlwaysShow.get() && !player.isHolding(CheckMeIn.NVG_PATH.get())) return;
+        if (!ClientConfig.INSTANCE.pathNaviAlwaysSuggest.get() && !player.isHolding(CheckMeIn.NVG_PATH.get())) return;
 
         var capOpt = GuidingManager.of(mc.player).resolve();
         if (capOpt.isPresent()) {

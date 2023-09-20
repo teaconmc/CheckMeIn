@@ -2,6 +2,7 @@ package org.teacon.checkin.world.level.block;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
@@ -20,7 +21,7 @@ import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.configs.ClientConfig;
 import org.teacon.checkin.configs.CommonConfig;
 import org.teacon.checkin.network.capability.CheckInPoints;
-import org.teacon.checkin.world.item.PathNavigator;
+import org.teacon.checkin.network.capability.GuidingManager;
 import org.teacon.checkin.world.level.block.entity.PointPathBlockEntity;
 
 import java.util.Collection;
@@ -69,15 +70,13 @@ public class PointPathBlock extends AbstractCheckPointBlock {
         private static final Vector3f CYAN_COLOR = new Vector3f(0, 1, 1);
         static void handle0(BlockState state, Level level, BlockPos pos) {
             var player = Minecraft.getInstance().player;
-            if (player == null) {
+            if (player == null) return;
+            if (!ClientConfig.INSTANCE.pathNaviAlwaysSuggest.get() && !player.isHolding(CheckMeIn.NVG_PATH.get())) return;
+            var globalPos = GlobalPos.of(level.dimension(), pos);
+            if (!GuidingManager.of(player).resolve().map(manager -> globalPos.equals(manager.clientFace.getPathNavNextPoint())).orElse(false))
                 return;
-            }
-            if (!(player.getMainHandItem().getItem() instanceof PathNavigator)) {
+            if (!Vec3.atCenterOf(pos).closerThan(player.position(), ClientConfig.INSTANCE.pathNaviRenderDistance.get()))
                 return;
-            }
-            if (!Vec3.atCenterOf(pos).closerThan(player.position(), ClientConfig.INSTANCE.pathNaviRenderDistance.get())) {
-                return;
-            }
             final float d = 1f / 4f;
             final double x = pos.getCenter().x(), y = pos.getCenter().y(), z = pos.getCenter().z(), r = CommonConfig.INSTANCE.pathPointCheckInRange.get() + 0.5;
             for (var dx = -r; dx <= r; dx += d) {

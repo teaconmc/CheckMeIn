@@ -15,7 +15,7 @@ public class ClientConfig {
 
     public final IntValue checkPointRenderDistance;
     public final IntValue pathNaviRenderDistance;
-    public final BooleanValue pathNaviArrowAlwaysShow;
+    public final BooleanValue pathNaviAlwaysSuggest;
 
     private ClientConfig(ForgeConfigSpec.Builder builder) {
         checkPointRenderDistance = builder
@@ -25,10 +25,10 @@ public class ClientConfig {
         pathNaviRenderDistance = builder.comment("Max render distance of check points when holding Path Navigator")
                 .translation("configs.check_in.path_navi_render_distance")
                 .defineInRange("path_navi_render_distance", 16, 0, 1024);
-        pathNaviArrowAlwaysShow = builder
-                .comment("Always show arrow no matter if Path Navigator is holding in either hand")
-                .translation("configs.check_in.path_navi_arrow_always_show")
-                .define("path_navi_arrow_always_show", false);
+        pathNaviAlwaysSuggest = builder
+                .comment("Always show suggestions (arrow, particles, etc) no matter if Path Navigator is holding in either hand")
+                .translation("configs.check_in.path_navi_always_suggest")
+                .define("path_navi_always_suggest", false);
     }
 
 }

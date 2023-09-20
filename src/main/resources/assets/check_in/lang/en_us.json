@@ -62,6 +62,7 @@
     "configs.check_in.check_point_render_distance": "Check-point Render Distance",
     "configs.check_in.point_unique_check_range": "Photography Check-in Point Check Range",
     "configs.check_in.point_path_check_range": "Path Check-in Point Check Range",
+    "configs.check_in.path_navi_always_suggest": "Path Navigator Always Suggest",
 
     "subtitles.check_in.item.checker.shot": "Camera snaps",
     "subtitles.check_in.entity.player.check_path": "Player checks path"
