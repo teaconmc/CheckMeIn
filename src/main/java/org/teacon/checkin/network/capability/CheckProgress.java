@@ -3,17 +3,17 @@ package org.teacon.checkin.network.capability;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.common.capabilities.*;
 import net.minecraftforge.common.util.LazyOptional;
-import org.apache.commons.lang3.tuple.Pair;
 import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.utils.NbtHelper;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 @AutoRegisterCapability
 public class CheckProgress {
@@ -74,7 +74,10 @@ public class CheckProgress {
     }
 
     @Nullable
-    public Short lastCheckedOrd(String teamID, String pathID) {return pathProgress.get(new PathPointData.TeamPathID(teamID, pathID));}
+    public Short lastCheckedOrd(PathPointData.TeamPathID teamPathID) {return pathProgress.get(teamPathID);}
+
+    @Nullable
+    public Short lastCheckedOrd(String teamID, String pathID) {return lastCheckedOrd(new PathPointData.TeamPathID(teamID, pathID));}
 
     public void copyFrom(CheckProgress progress) {
         this.uniquePoints.clear();
@@ -127,29 +130,6 @@ public class CheckProgress {
     /*                  Utilities                 */
     public static LazyOptional<CheckProgress> of(ServerPlayer player) {
         return player.getCapability(Provider.CAPABILITY);
-    }
-
-    @Nullable
-    public static Pair<ServerLevel, PathPointData> nextPointOnPath(ServerPlayer player, String teamID, String pathID) {
-        var progOpt = CheckProgress.of(player).resolve();
-        if (progOpt.isEmpty()) return null;
-        var lastOrd = progOpt.get().lastCheckedOrd(teamID, pathID);
-        if (lastOrd == null) lastOrd = -1;
-
-        ServerLevel level = null;
-        PathPointData next = null;
-        for (var lvl : player.server.getAllLevels()) {
-            var pointsOpt = CheckInPoints.of(lvl).resolve();
-            if (pointsOpt.isEmpty()) continue;
-
-            var tmp = pointsOpt.get().getNextPathPoint(teamID, pathID, lastOrd);
-            assert tmp == null || tmp.ord() != null;
-            if (tmp != null && (next == null || next.ord() > tmp.ord())) {
-                next = tmp;
-                level = lvl;
-            }
-        }
-        return next == null ? null : Pair.of(level, next);
     }
 
     public static class Provider implements ICapabilitySerializable<CompoundTag> {

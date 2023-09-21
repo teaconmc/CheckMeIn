@@ -73,13 +73,22 @@ public class CheckInPoints {
      * if the path does not exist, or the ord is the last one, null is returned.
      */
     @Nullable
-    public PathPointData getNextPathPoint(String teamID, String pathID, short ord) {
-        var ordMap = this.teamPathIDPathPointMap.get(new PathPointData.TeamPathID(teamID, pathID));
+    public PathPointData getNextPathPoint(PathPointData.TeamPathID teamPathID, short ord) {
+        var ordMap = this.teamPathIDPathPointMap.get(teamPathID);
         return ordMap == null ? null : ordMap.getNext(ord);
     }
 
+    @Nullable
+    public PathPointData getNextPathPoint(String teamID, String pathID, short ord) {
+        return getNextPathPoint(new PathPointData.TeamPathID(teamID, pathID), ord);
+    }
+
     public Collection<PathPointData> nonnullOrdPathPoints(String teamID, String pathID) {
-        var ordMap = this.teamPathIDPathPointMap.get(new PathPointData.TeamPathID(teamID, pathID));
+        return nonnullOrdPathPoints(new PathPointData.TeamPathID(teamID, pathID));
+    }
+
+    public Collection<PathPointData> nonnullOrdPathPoints(PathPointData.TeamPathID teamPathID) {
+        var ordMap = this.teamPathIDPathPointMap.get(teamPathID);
         return ordMap == null ? List.of() : ordMap.nonnullOrdValues();
     }
 

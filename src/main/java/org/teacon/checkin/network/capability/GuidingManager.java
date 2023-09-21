@@ -62,25 +62,18 @@ public class GuidingManager {
         private PathPointData.TeamPathID pathPlannerFocusID = null;
         @Nullable
         private ResourceKey<Level> dimension = null;
-        @Nullable
-        private GlobalPos pathNavNextPoint = null;
 
         @Nullable
         public PathPointData.TeamPathID getPathPlannerFocusID() {return pathPlannerFocusID;}
 
-        @Nullable
-        public ResourceKey<Level> getDimension() {return dimension;}
-
-        public void setPathPlannerFocusID(PathPointData.TeamPathID pathPlannerFocusID) {
+        public void setPathPlannerFocusID(@Nullable PathPointData.TeamPathID pathPlannerFocusID) {
             this.pathPlannerFocusID = pathPlannerFocusID;
         }
 
-        public void setDimension(@Nullable ResourceKey<Level> dimension) {this.dimension = dimension;}
-
         @Nullable
-        public GlobalPos getPathNavNextPoint() {return pathNavNextPoint;}
+        public ResourceKey<Level> getDimension() {return dimension;}
 
-        public void setPathNavNextPoint(@Nullable GlobalPos pathNavNextPoint) {this.pathNavNextPoint = pathNavNextPoint;}
+        public void setDimension(@Nullable ResourceKey<Level> dimension) {this.dimension = dimension;}
     }
 
     public static class Provider implements ICapabilityProvider {

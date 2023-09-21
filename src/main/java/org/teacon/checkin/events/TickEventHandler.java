@@ -2,14 +2,16 @@ package org.teacon.checkin.events;
 
 
 import net.minecraft.core.GlobalPos;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
+
+import org.apache.commons.lang3.tuple.Pair;
 import org.teacon.checkin.CheckMeIn;
 import org.teacon.checkin.configs.CommonConfig;
 import org.teacon.checkin.network.capability.CheckInPoints;
@@ -23,108 +25,130 @@ import org.teacon.checkin.world.item.PathPlanner;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Objects;
-import java.util.Optional;
+
+import javax.annotation.Nullable;
 
 @Mod.EventBusSubscriber(modid = CheckMeIn.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TickEventHandler {
+    /**
+     * This part can be computational-heavy.
+     * Be sure to cache a few things including capabilities and avoid unnecessary operations.
+     * <p>
+     * Take care reading and resetting flag variables.
+     */
     @SubscribeEvent
     public static void handleLevelTickEvent(TickEvent.LevelTickEvent event) {
-        var level = event.level;
-        if (event.phase == TickEvent.Phase.END) {
-            var resetFlagCallbacks = new ArrayList<Runnable>();
-            for (var player : level.players()) {
-                // flags should be reset in callback functions to prevent interfering following syncing functions
-                // flags are reset after each tick, so everything sync-able should always be synced
-                resetFlagCallbacks.add(syncPathPlannerGuidingPoints(player));
-                resetFlagCallbacks.add(syncPathNavGuidingPoints(player));
+        if (event.side == LogicalSide.SERVER && !event.level.isClientSide) {
+            var level = (ServerLevel) event.level;
+
+            if (event.phase == TickEvent.Phase.END) {
+                var points = CheckInPoints.of(level).resolve().orElse(null);
+
+                var allPoints = new ArrayList<Pair<ServerLevel, CheckInPoints>>();
+                for (var lvl : level.getServer().getAllLevels()) allPoints.add(Pair.of(lvl, CheckInPoints.of(lvl).resolve().orElse(null)));
+
+                for (var player : level.players()) {
+                    var guiding = GuidingManager.of(player).resolve().map($ -> $.serverFace).orElse(null);
+                    if (points != null && guiding != null) {
+                        syncPathPlannerGuidingPoints(player, level, points, guiding);
+
+                        var progress = CheckProgress.of(player).resolve().orElse(null);
+                        if (progress != null) {
+                            syncPathNavGuidingPoints(player, level, points, guiding, progress, allPoints);
+                            checkNearbyPathPoint(player, level, progress, allPoints);
+                        }
+                    }
+
+                    if (guiding != null) guiding.setDimension(level.dimension());
+                }
+                if (points != null) points.pathsNeedSync().clear();
             }
-            resetFlagCallbacks.forEach(Runnable::run);
-
-            for (var player : level.players()) checkNearbyPathPoint(player);
         }
     }
 
-    private static Runnable syncPathPlannerGuidingPoints(Player player) {
-        var callbackHolder = new Runnable[]{() -> {}};
-        if (player instanceof ServerPlayer serverPlayer) {
-            // when the item is not a PathPlanner, the ids will be empty strings, and a path of length 0 will be synced
-            var compoundTag = player.getMainHandItem().is(CheckMeIn.PATH_PLANNER.get())
-                    ? player.getMainHandItem().getOrCreateTagElement(PathPlanner.PLANNER_PROPERTY_KEY)
-                    : new CompoundTag();
-            var teamID = compoundTag.getString(PathPlanner.TEAM_ID_KEY);
-            var pathID = compoundTag.getString(PathPlanner.PATH_ID_KEY);
-            var id = new PathPointData.TeamPathID(teamID, pathID);
-            var dim = player.level().dimension();
-
-            CheckInPoints.of(player.level()).ifPresent(points -> GuidingManager.of(player).ifPresent(guiding -> {
-                if (points.pathsNeedSync().contains(id) || !id.equals(guiding.serverFace.getPathPlannerFocusID()) || !dim.equals(guiding.serverFace.getDimension())) {
-                    var path = points.nonnullOrdPathPoints(teamID, pathID).stream()
-                            .sorted(Comparator.comparing(data -> Objects.requireNonNull(data.ord())))
-                            .map(PathPointData::pos)
-                            .toList();
-                    new PathPlannerGuidePacket(path).send(serverPlayer);
-                    callbackHolder[0] = () -> {
-                        guiding.serverFace.setPathPlannerFocusID(id);
-                        guiding.serverFace.setDimension(dim);
-                        points.pathsNeedSync().clear();
-                    };
-                }
-            }));
+    private static void syncPathPlannerGuidingPoints(ServerPlayer player, ServerLevel level, CheckInPoints points, GuidingManager.ServerFace guiding) {
+        var mainHandItem = player.getMainHandItem();
+        if (!mainHandItem.is(CheckMeIn.PATH_PLANNER.get())) {
+            // should be fine to exit w/o syncing
+            // cuz it's still tracked and client won't see it anyway
+            guiding.setPathPlannerFocusID(null);
+            return;
         }
-        return callbackHolder[0];
+
+        var compoundTag = mainHandItem.getOrCreateTagElement(PathPlanner.PLANNER_PROPERTY_KEY);
+        var id = new PathPointData.TeamPathID(
+                compoundTag.getString(PathPlanner.TEAM_ID_KEY),
+                compoundTag.getString(PathPlanner.PATH_ID_KEY));
+
+        if (points.pathsNeedSync().contains(id) || !id.equals(guiding.getPathPlannerFocusID()) || !level.dimension().equals(guiding.getDimension())) {
+            //noinspection DataFlowIssue
+            var path = points.nonnullOrdPathPoints(id).stream()
+                    .sorted(Comparator.comparing(PathPointData::ord)) // ord is non-null
+                    .map(PathPointData::pos)
+                    .toList();
+            new PathPlannerGuidePacket(path).send(player);
+
+            guiding.setPathPlannerFocusID(id);
+        }
     }
 
-    private static Runnable syncPathNavGuidingPoints(Player player) {
-        var callbackHolder = new Runnable[]{() -> {}};
-        if (player instanceof ServerPlayer serverPlayer) {
-            CheckInPoints.of(serverPlayer.serverLevel()).ifPresent(points -> CheckProgress.of(serverPlayer).ifPresent(progress -> GuidingManager.of(serverPlayer).ifPresent(guiding -> {
-                var id = progress.getCurrentlyGuiding();
-                var dim = player.level().dimension();
-                if (progress.isNeedSyncPathProgress() || points.pathsNeedSync().contains(id) || !dim.equals(guiding.serverFace.getDimension())) {
-                    var nextGlobal = Optional.ofNullable(progress.getCurrentlyGuiding())
-                            .map($ -> CheckProgress.nextPointOnPath(serverPlayer, $.teamID(), $.pathID()))
-                            .map($ -> GlobalPos.of($.getLeft().dimension(), $.getRight().pos()))
-                            .orElse(null);
-                    CheckMeIn.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new SyncNextNavPointPacket(nextGlobal));
-                    callbackHolder[0] = () -> {
-                        guiding.serverFace.setDimension(dim);
-                        progress.setNeedSyncPathProgress(false);
-                        points.pathsNeedSync().clear();
-                    };
+    private static void syncPathNavGuidingPoints(ServerPlayer player, ServerLevel level, CheckInPoints points, GuidingManager.ServerFace guiding, CheckProgress progress,
+            Iterable<Pair<ServerLevel, CheckInPoints>> allPoints) {
+        var id = progress.getCurrentlyGuiding();
+        if (progress.isNeedSyncPathProgress() || points.pathsNeedSync().contains(id) || !level.dimension().equals(guiding.getDimension())) {
+            GlobalPos nextGlobal = null;
+            if (id != null) {
+                var nextPoint = nextPointOnPath(progress, allPoints, id);
+                if (nextPoint != null) {
+                    nextGlobal = GlobalPos.of(nextPoint.getLeft().dimension(), nextPoint.getRight().pos());
                 }
-            })));
+            } 
+            CheckMeIn.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new SyncNextNavPointPacket(nextGlobal));
+
+            progress.setNeedSyncPathProgress(false);
         }
-        return callbackHolder[0];
     }
 
     /**
      * Note: when points are added/changed into ord no greater than the last checked ord,
      * then their changes are ignored (player does not need to (re)visit them)
      */
-    private static void checkNearbyPathPoint(Player player) {
-        if (!(player instanceof ServerPlayer serverPlayer)) return;
-        var level = ((ServerPlayer) player).serverLevel();
+    private static void checkNearbyPathPoint(ServerPlayer player, ServerLevel level, CheckProgress progress, Iterable<Pair<ServerLevel, CheckInPoints>> allPoints) {
+        var id = progress.getCurrentlyGuiding();
+        if (id == null) return;
 
-        var progOpt = CheckProgress.of(serverPlayer).resolve();
-        var pointsOpt = CheckInPoints.of(level).resolve();
-        if (progOpt.isEmpty() || pointsOpt.isEmpty()) return;
-        var prog = progOpt.get();
-
-        var guidingPath = prog.getCurrentlyGuiding();
-        if (guidingPath == null) return;
-
-        var nextOnPath = CheckProgress.nextPointOnPath(serverPlayer, guidingPath.teamID(), guidingPath.pathID());
+        var nextOnPath = nextPointOnPath(progress, allPoints, id);
         if (nextOnPath != null) {
             var nextLevel = nextOnPath.getLeft();
             var nextPoint = nextOnPath.getRight();
 
             // assume the capabilities are synced, so no check for the actual block / block entity in the world
-            if (nextLevel == level && MathHelper.chebyshevDist(nextPoint.pos(), serverPlayer.blockPosition()) <= CommonConfig.INSTANCE.pathPointCheckInRange.get()) {
+            if (nextLevel == level && MathHelper.chebyshevDist(nextPoint.pos(), player.blockPosition()) <= CommonConfig.INSTANCE.pathPointCheckInRange.get()) {
                 player.playNotifySound(CheckMeIn.CHECK_PATH.get(), SoundSource.PLAYERS, 0.25F, 0.9F);
                 assert nextPoint.ord() != null;
-                prog.checkPathPoint(nextPoint.teamPathID(), nextPoint.ord());
+                progress.checkPathPoint(nextPoint.teamPathID(), nextPoint.ord());
             }
         }
+    }
+
+    @Nullable
+    public static Pair<ServerLevel, PathPointData> nextPointOnPath(CheckProgress progress, Iterable<Pair<ServerLevel, CheckInPoints>> allPoints, PathPointData.TeamPathID id) {
+        var lastOrd = progress.lastCheckedOrd(id);
+        if (lastOrd == null) lastOrd = -1;
+
+        ServerLevel level = null;
+        PathPointData next = null;
+        for (var pair : allPoints) {
+            var lvl = pair.getLeft(); var points = pair.getRight();
+            if (points == null) continue;
+
+            var tmp = points.getNextPathPoint(id, lastOrd);
+            assert tmp == null || tmp.ord() != null;
+            if (tmp != null && (next == null || next.ord() > tmp.ord())) {
+                next = tmp;
+                level = lvl;
+            }
+        }
+        return next == null ? null : Pair.of(level, next);
     }
 }
